@@ -71,7 +71,8 @@ cd node_server
 node .
 ```
 
-##### 3. A Pure Data benjolin, which receives control parameters and synthesizes sound. Open the patch <code>pure-data-benjo-2024.pd</code>.
+##### 3. A Pure Data benjolin, which receives control parameters and synthesizes sound. 
+Open the patch <code>pure-data-benjo-2024.pd</code>.
 
 ##### 4. A user interface, which sends controls to the benjolin.
 
