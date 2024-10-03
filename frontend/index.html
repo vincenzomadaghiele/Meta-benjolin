@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>Benjolin latent space</title>
+		<!-- Bootstrap CSS -->
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" 
+		    integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+        <link rel="stylesheet" type="text/css" media="all" href="style.css">
+		<script src="node_modules/jquery/dist/jquery.js"></script>
+        <script src="node_modules/osc/dist/osc-browser.min.js"></script>
+		<script src="osc-communication.js"></script>
+		<script src="/dataset3D.js"></script>
+	</head>
+	<body>
+		<script type="x-shader/x-vertex" id="vertexshader">
+			attribute float size;
+			attribute float opacity;
+			attribute vec3 customColor;
+
+			varying vec3 vColor;
+            varying float myopacity;
+
+			void main() {
+
+				vColor = customColor;
+                myopacity = opacity;
+
+				vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+
+				gl_PointSize = size * ( 50.0 / -mvPosition.z );
+
+				gl_Position = projectionMatrix * mvPosition;
+			}
+		</script>
+
+		<script type="x-shader/x-fragment" id="fragmentshader">
+            uniform vec3 color;
+			uniform sampler2D pointTexture;
+
+			varying vec3 vColor;
+            varying float myopacity;
+
+			void main() {
+
+				gl_FragColor = vec4( color * vColor, myopacity);
+				gl_FragColor = gl_FragColor * texture2D( pointTexture, gl_PointCoord );
+
+			}
+		</script>
+
+        <div class="container-fluid">
+            <div class="row p-2" style="background-color: #54ADD5; height: 10vh;">
+                <div class="col-12 col-md-3 px-3 d-flex justify-content-between align-self-center">
+                    <div class="text-center">
+                        <button id="insert-crossfade-button">
+                            <img id="insert-crossfade" src="imgs/arrow.png" height="35vh" class="clickable-element">
+                        </button>
+                        <p>crossfade</p>
+                    </div>
+                    <div class="text-center" >
+                        <button id="insert-meander-button">
+                            <img id="insert-meander" src="imgs/zigzag.png" height="35vh" class="clickable-element">
+                        </button>
+                        <p>meander</p>
+                    </div>
+                    <div class="text-center">
+                        <button id="bin-button">
+                            <img id="bin" src="imgs/bin.png" height="35vh">
+                        </button>
+                        <p>bin</p>
+                    </div>
+                    <div class="text-center">
+                        <button id="play-button">
+                            <img id="play" src="imgs/play.png" height="35vh" class="clickable-element">
+                        </button>
+                        <p>play</p>
+                    </div>
+                    <div class="text-center">
+                        <button id="stop-button">
+                            <img id="stop" src="imgs/stop.png" height="35vh" class="clickable-element">
+                        </button>
+                        <p>stop</p>
+                    </div>
+
+                </div>
+                <div class="col-md-9 d-flex justify-content-center align-self-center"><h2>Latent Benjolin</h2></div>
+            </div>
+            <div class="row" style="height: 90vh;">
+                <div class="col-2 px-3 py-0 m-0" style="background-color: #254C5E;">
+                    <div id="compose-bar" class="compose-bar"></div>
+                </div>
+                <div class="col-10" style="background-color: #000609;">
+                    <div id="scatterPlot" class="latent-space">    
+                    </div>
+                </div>
+            </div>
+        </div>
+
+		<script type="module" src="/main.js"></script>
+	</body>
+</html>
