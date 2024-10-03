@@ -53,7 +53,7 @@ npm i osc
 ## Running the demo
 
 To run the demo, we need three terminals to be open at the same time. These terminals will run, in parallel:
-#### 1. A python server, which communicates with PD through OSC protocol:
+##### 1. A python server, which communicates with PD through OSC protocol:
 
 ```
 cd <folder>
@@ -62,7 +62,7 @@ conda activate benjo
 python3 latent_space_class.py
 ```
 
-#### 2. A node server, which relays messages from the browser to the python server:
+##### 2. A node server, which relays messages from the browser to the python server:
 
 ```
 cd <folder>
@@ -70,16 +70,17 @@ cd node_server
 node .
 ```
 
-#### 3. A Pure Data benjolin, which receives control parameters and synthesizes sound. Open the patch <code>pure-data-benjo-2024.pd</code>.
+##### 3. A Pure Data benjolin, which receives control parameters and synthesizes sound. Open the patch <code>pure-data-benjo-2024.pd</code>.
 
-#### 4. A user interface, which sends controls to the benjolin. 
+##### 4. A user interface, which sends controls to the benjolin.
+
 ```
 cd <folder>
 cd frontend
 npx vite
 ```
 
-### Running the demo
+### Known bugs
 Known bugs (solving them at the moment):
 - Path rendering on the point cloud is not accurate
 - Playback when clicking on boxes does not have the same duration every time
