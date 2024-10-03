@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Latent Benjolin</title>
+        <meta charset="UTF-8" />
+        <link rel="stylesheet" type="text/css" media="all" href="style.css">
+        <script src="/dataset3D.js"></script>
+    </head>
+
+    <body>
+
+        <script type="x-shader/x-vertex" id="vertexshader">
+            attribute float size;
+            attribute float opacity;
+            attribute vec3 customColor;
+
+            varying vec3 vColor;
+            varying float myopacity;
+
+            void main() {
+
+                vColor = customColor;
+                myopacity = opacity;
+
+                vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+
+                gl_PointSize = size * ( 50.0 / -mvPosition.z );
+
+                gl_Position = projectionMatrix * mvPosition;
+            }
+        </script>
+        <script type="x-shader/x-fragment" id="fragmentshader">
+            uniform vec3 color;
+            uniform sampler2D pointTexture;
+
+            varying vec3 vColor;
+            varying float myopacity;
+
+            void main() {
+
+                gl_FragColor = vec4( color * vColor, myopacity);
+                gl_FragColor = gl_FragColor * texture2D( pointTexture, gl_PointCoord );
+
+            }
+        </script>
+
+
+        <div id="scatterPlot"></div>
+
+        <div id="commands-bar">
+            <button id="insert-crossfade">
+            <div class="text-center">
+                <img  src="imgs/arrow.png" height="35px">
+            </div>
+            </button>
+            <button id="insert-meander">
+            <div class="text-center">
+                <img  src="imgs/zigzag.png" height="35px">
+            </div>
+            </button>
+            <button id="bin">
+            <div class="text-center">
+                <img  src="imgs/bin.png" height="35px">
+            </div>
+            </button>
+        </div>
+        <div id="commands-bar-2">
+            <button id="play">
+            <div class="text-center">
+                <img  src="imgs/play.png" height="35px">
+            </div>
+            </button>
+            <button id="stop">
+            <div class="text-center">
+                <img  src="imgs/stop.png" height="35px">
+            </div>
+            </button>
+        </div>
+
+        <div id="timeline"></div>
+        <div id="composition-bar">
+        </div>
+
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"> </script> 
+    <script src="main.js"></script>
+    <script type="module" src="/scatterplot.js"></script>
+    </body>
+</html>
