@@ -8,11 +8,11 @@ The server is responsible for relaying OSC messages bidirectionally between the 
 ### Python
 Download the git repository as:
 ```
-git clone https://github.com/<folder>
+git clone https://github.com/vincenzomadaghiele/Latent-benjolin-interface
 ```
 In the terminal, run: 
 ```
-cd <folder>
+cd Latent-benjolin-interface
 conda env create -f benjo_environment.yml
 conda activate benjo
 ```
@@ -52,12 +52,12 @@ npm i osc
 
 ## Running the demo
 
-To run the demo, we need three terminals to be open at the same time. These terminals will run, in parallel:
+To run the demo, we need <b>three separate terminals</b>b> to be open at the same time. These terminals will run, in parallel:
 
 ##### 1. A python server, which communicates with PD through OSC protocol:
 
 ```
-cd <folder>
+cd Latent-benjolin-interface
 cd python_server
 conda activate benjo
 python3 latent_space_class.py
@@ -66,7 +66,7 @@ python3 latent_space_class.py
 ##### 2. A node server, which relays messages from the browser to the python server:
 
 ```
-cd <folder>
+cd Latent-benjolin-interface
 cd node_server
 node .
 ```
@@ -77,7 +77,7 @@ Open the patch <code>pure-data-benjo-2024.pd</code>.
 ##### 4. A user interface, which sends controls to the benjolin.
 
 ```
-cd <folder>
+cd Latent-benjolin-interface
 cd frontend
 npx vite
 ```
