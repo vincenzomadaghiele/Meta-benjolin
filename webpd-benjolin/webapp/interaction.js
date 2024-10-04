@@ -1,3 +1,10 @@
+// TODO
+// - beautify
+// - live scope
+// - credits
+// - deploy
+
+
 // SUMMARY
 // 1. WEB PAGE INITIALIZATION
 // 2. SENDING MESSAGES FROM JAVASCRIPT TO THE PATCH
