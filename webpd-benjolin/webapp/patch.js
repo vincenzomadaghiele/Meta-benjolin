@@ -236,13 +236,6 @@ function G_msgBuses_unsubscribe(busName, callback) {
                 callbacks.splice(found, 1)
             }
         }
-function G_tokenConversion_toFloat(m, i) {
-        if (G_msg_isFloatToken(m, i)) {
-            return G_msg_readFloatToken(m, i)
-        } else {
-            return 0
-        }
-    }
 function G_tokenConversion_toString_(m, i) {
         if (G_msg_isStringToken(m, i)) {
             const str = G_msg_readStringToken(m, i)
@@ -253,6 +246,13 @@ function G_tokenConversion_toString_(m, i) {
             }
         } else {
             return 'float'
+        }
+    }
+function G_tokenConversion_toFloat(m, i) {
+        if (G_msg_isFloatToken(m, i)) {
+            return G_msg_readFloatToken(m, i)
+        } else {
+            return 0
         }
     }
 function G_actionUtils_isAction(message, action) {
@@ -607,52 +607,6 @@ function NT_vsl_receiveMessage(state, m) {
                     }
                 }
 
-function NT_bang_setReceiveBusName(state, busName) {
-            if (state.receiveBusName !== "empty") {
-                G_msgBuses_unsubscribe(state.receiveBusName, state.messageReceiver)
-            }
-            state.receiveBusName = busName
-            if (state.receiveBusName !== "empty") {
-                G_msgBuses_subscribe(state.receiveBusName, state.messageReceiver)
-            }
-        }
-function NT_bang_setSendReceiveFromMessage(state, m) {
-            if (
-                G_msg_isMatching(m, [G_msg_STRING_TOKEN, G_msg_STRING_TOKEN])
-                && G_msg_readStringToken(m, 0) === 'receive'
-            ) {
-                NT_bang_setReceiveBusName(state, G_msg_readStringToken(m, 1))
-                return true
-
-            } else if (
-                G_msg_isMatching(m, [G_msg_STRING_TOKEN, G_msg_STRING_TOKEN])
-                && G_msg_readStringToken(m, 0) === 'send'
-            ) {
-                state.sendBusName = G_msg_readStringToken(m, 1)
-                return true
-            }
-            return false
-        }
-function NT_bang_defaultMessageHandler(m) {}
-function NT_bang_receiveMessage(state, m) {
-                if (NT_bang_setSendReceiveFromMessage(state, m) === true) {
-                    return
-                }
-                
-                const outMessage = G_bangUtils_bang()
-                state.messageSender(outMessage)
-                if (state.sendBusName !== "empty") {
-                    G_msgBuses_publish(state.sendBusName, outMessage)
-                }
-                return
-            }
-
-
-
-function NT_random_setMaxValue(state, maxValue) {
-                state.maxValue = Math.max(maxValue, 0)
-            }
-
 
 
 
@@ -814,8 +768,6 @@ function NT_vcf_t_setQ(state, Q) {
 
 
 
-
-
 function NT_receive_t_setBusName(state, busName) {
             if (busName.length) {
                 state.busName = busName
@@ -868,7 +820,7 @@ const N_n_0_15_state = {
 maxValue: 127,
 valueFloat: 0,
 value: G_msg_create([]),
-receiveBusName: "01_FRQ-SET",
+receiveBusName: "empty",
 sendBusName: "01_FRQ",
 messageReceiver: NT_vsl_defaultMessageHandler,
 messageSender: NT_vsl_defaultMessageHandler,
@@ -878,7 +830,7 @@ const N_n_0_16_state = {
 maxValue: 127,
 valueFloat: 0,
 value: G_msg_create([]),
-receiveBusName: "01_RUN-SET",
+receiveBusName: "empty",
 sendBusName: "01_RUN",
 messageReceiver: NT_vsl_defaultMessageHandler,
 messageSender: NT_vsl_defaultMessageHandler,
@@ -888,7 +840,7 @@ const N_n_0_17_state = {
 maxValue: 127,
 valueFloat: 0,
 value: G_msg_create([]),
-receiveBusName: "02_FRQ-SET",
+receiveBusName: "empty",
 sendBusName: "02_FRQ",
 messageReceiver: NT_vsl_defaultMessageHandler,
 messageSender: NT_vsl_defaultMessageHandler,
@@ -908,7 +860,7 @@ const N_n_0_19_state = {
 maxValue: 127,
 valueFloat: 0,
 value: G_msg_create([]),
-receiveBusName: "FIL_FRQ-SET",
+receiveBusName: "empty",
 sendBusName: "FIL_FRQ",
 messageReceiver: NT_vsl_defaultMessageHandler,
 messageSender: NT_vsl_defaultMessageHandler,
@@ -918,7 +870,7 @@ const N_n_0_20_state = {
 maxValue: 127,
 valueFloat: 0,
 value: G_msg_create([]),
-receiveBusName: "FIL_RES-SET",
+receiveBusName: "empty",
 sendBusName: "FIL_RES",
 messageReceiver: NT_vsl_defaultMessageHandler,
 messageSender: NT_vsl_defaultMessageHandler,
@@ -928,7 +880,7 @@ const N_n_0_21_state = {
 maxValue: 127,
 valueFloat: 0,
 value: G_msg_create([]),
-receiveBusName: "FIL_RUN-SET",
+receiveBusName: "empty",
 sendBusName: "FIL_RUN",
 messageReceiver: NT_vsl_defaultMessageHandler,
 messageSender: NT_vsl_defaultMessageHandler,
@@ -938,48 +890,10 @@ const N_n_0_22_state = {
 maxValue: 127,
 valueFloat: 0,
 value: G_msg_create([]),
-receiveBusName: "FIL_SWP-SET",
+receiveBusName: "empty",
 sendBusName: "FIL_SWP",
 messageReceiver: NT_vsl_defaultMessageHandler,
 messageSender: NT_vsl_defaultMessageHandler,
-                            }
-const N_n_0_23_state = {
-                                value: G_msg_create([]),
-receiveBusName: "RESET-SET",
-sendBusName: "RESET",
-messageReceiver: NT_bang_defaultMessageHandler,
-messageSender: NT_bang_defaultMessageHandler,
-                            }
-const N_n_0_25_state = {
-                                value: G_msg_create([]),
-receiveBusName: "RAND-SET",
-sendBusName: "RAND",
-messageReceiver: NT_bang_defaultMessageHandler,
-messageSender: NT_bang_defaultMessageHandler,
-                            }
-const N_n_9_1_state = {
-                                maxValue: 128,
-                            }
-const N_n_9_2_state = {
-                                maxValue: 128,
-                            }
-const N_n_9_3_state = {
-                                maxValue: 128,
-                            }
-const N_n_9_4_state = {
-                                maxValue: 128,
-                            }
-const N_n_9_5_state = {
-                                maxValue: 128,
-                            }
-const N_n_9_6_state = {
-                                maxValue: 128,
-                            }
-const N_n_9_7_state = {
-                                maxValue: 128,
-                            }
-const N_n_9_8_state = {
-                                maxValue: 128,
                             }
 const N_n_1_40_state = {
                                 msgSpecs: [],
@@ -1190,30 +1104,6 @@ const N_n_7_26_state = {
                                 currentLine: NT_line_t_defaultLine,
 currentValue: 0,
 nextDurationSamp: 0,
-                            }
-const N_n_9_17_state = {
-                                msgSpecs: [],
-                            }
-const N_n_9_18_state = {
-                                msgSpecs: [],
-                            }
-const N_n_9_19_state = {
-                                msgSpecs: [],
-                            }
-const N_n_9_20_state = {
-                                msgSpecs: [],
-                            }
-const N_n_9_21_state = {
-                                msgSpecs: [],
-                            }
-const N_n_9_22_state = {
-                                msgSpecs: [],
-                            }
-const N_n_9_23_state = {
-                                msgSpecs: [],
-                            }
-const N_n_9_24_state = {
-                                msgSpecs: [],
                             }
 const N_n_1_31_state = {
                                 busName: "",
@@ -1488,174 +1378,6 @@ function N_n_0_22_rcvs_0(m) {
                 return
             
                             throw new Error('Node "n_0_22", inlet "0", unsupported message : ' + G_msg_display(m))
-                        }
-
-function N_n_0_23_rcvs_0(m) {
-                            
-            NT_bang_receiveMessage(N_n_0_23_state, m)
-            return
-        
-                            throw new Error('Node "n_0_23", inlet "0", unsupported message : ' + G_msg_display(m))
-                        }
-
-function N_n_0_25_rcvs_0(m) {
-                            
-            NT_bang_receiveMessage(N_n_0_25_state, m)
-            return
-        
-                            throw new Error('Node "n_0_25", inlet "0", unsupported message : ' + G_msg_display(m))
-                        }
-
-function N_n_0_26_rcvs_0(m) {
-                            
-            N_n_0_23_rcvs_0(G_bangUtils_bang())
-N_n_9_26_rcvs_0(G_bangUtils_bang())
-            return
-        
-                            throw new Error('Node "n_0_26", inlet "0", unsupported message : ' + G_msg_display(m))
-                        }
-
-function N_n_9_26_rcvs_0(m) {
-                            
-            N_n_9_8_rcvs_0(G_bangUtils_bang())
-N_n_9_7_rcvs_0(G_bangUtils_bang())
-N_n_9_6_rcvs_0(G_bangUtils_bang())
-N_n_9_5_rcvs_0(G_bangUtils_bang())
-N_n_9_4_rcvs_0(G_bangUtils_bang())
-N_n_9_3_rcvs_0(G_bangUtils_bang())
-N_n_9_2_rcvs_0(G_bangUtils_bang())
-N_n_9_1_rcvs_0(G_bangUtils_bang())
-            return
-        
-                            throw new Error('Node "n_9_26", inlet "0", unsupported message : ' + G_msg_display(m))
-                        }
-
-function N_n_9_1_rcvs_0(m) {
-                            
-            if (G_bangUtils_isBang(m)) {
-                N_n_0_15_rcvs_0(G_msg_floats([Math.floor(Math.random() * N_n_9_1_state.maxValue)]))
-                return
-            } else if (
-                G_msg_isMatching(m, [G_msg_STRING_TOKEN, G_msg_FLOAT_TOKEN])
-                && G_msg_readStringToken(m, 0) === 'seed'
-            ) {
-                console.log('WARNING : seed not implemented yet for [random]')
-                return
-            }
-        
-                            throw new Error('Node "n_9_1", inlet "0", unsupported message : ' + G_msg_display(m))
-                        }
-
-function N_n_9_2_rcvs_0(m) {
-                            
-            if (G_bangUtils_isBang(m)) {
-                N_n_0_16_rcvs_0(G_msg_floats([Math.floor(Math.random() * N_n_9_2_state.maxValue)]))
-                return
-            } else if (
-                G_msg_isMatching(m, [G_msg_STRING_TOKEN, G_msg_FLOAT_TOKEN])
-                && G_msg_readStringToken(m, 0) === 'seed'
-            ) {
-                console.log('WARNING : seed not implemented yet for [random]')
-                return
-            }
-        
-                            throw new Error('Node "n_9_2", inlet "0", unsupported message : ' + G_msg_display(m))
-                        }
-
-function N_n_9_3_rcvs_0(m) {
-                            
-            if (G_bangUtils_isBang(m)) {
-                N_n_0_17_rcvs_0(G_msg_floats([Math.floor(Math.random() * N_n_9_3_state.maxValue)]))
-                return
-            } else if (
-                G_msg_isMatching(m, [G_msg_STRING_TOKEN, G_msg_FLOAT_TOKEN])
-                && G_msg_readStringToken(m, 0) === 'seed'
-            ) {
-                console.log('WARNING : seed not implemented yet for [random]')
-                return
-            }
-        
-                            throw new Error('Node "n_9_3", inlet "0", unsupported message : ' + G_msg_display(m))
-                        }
-
-function N_n_9_4_rcvs_0(m) {
-                            
-            if (G_bangUtils_isBang(m)) {
-                N_n_0_18_rcvs_0(G_msg_floats([Math.floor(Math.random() * N_n_9_4_state.maxValue)]))
-                return
-            } else if (
-                G_msg_isMatching(m, [G_msg_STRING_TOKEN, G_msg_FLOAT_TOKEN])
-                && G_msg_readStringToken(m, 0) === 'seed'
-            ) {
-                console.log('WARNING : seed not implemented yet for [random]')
-                return
-            }
-        
-                            throw new Error('Node "n_9_4", inlet "0", unsupported message : ' + G_msg_display(m))
-                        }
-
-function N_n_9_5_rcvs_0(m) {
-                            
-            if (G_bangUtils_isBang(m)) {
-                N_n_0_19_rcvs_0(G_msg_floats([Math.floor(Math.random() * N_n_9_5_state.maxValue)]))
-                return
-            } else if (
-                G_msg_isMatching(m, [G_msg_STRING_TOKEN, G_msg_FLOAT_TOKEN])
-                && G_msg_readStringToken(m, 0) === 'seed'
-            ) {
-                console.log('WARNING : seed not implemented yet for [random]')
-                return
-            }
-        
-                            throw new Error('Node "n_9_5", inlet "0", unsupported message : ' + G_msg_display(m))
-                        }
-
-function N_n_9_6_rcvs_0(m) {
-                            
-            if (G_bangUtils_isBang(m)) {
-                N_n_0_20_rcvs_0(G_msg_floats([Math.floor(Math.random() * N_n_9_6_state.maxValue)]))
-                return
-            } else if (
-                G_msg_isMatching(m, [G_msg_STRING_TOKEN, G_msg_FLOAT_TOKEN])
-                && G_msg_readStringToken(m, 0) === 'seed'
-            ) {
-                console.log('WARNING : seed not implemented yet for [random]')
-                return
-            }
-        
-                            throw new Error('Node "n_9_6", inlet "0", unsupported message : ' + G_msg_display(m))
-                        }
-
-function N_n_9_7_rcvs_0(m) {
-                            
-            if (G_bangUtils_isBang(m)) {
-                N_n_0_21_rcvs_0(G_msg_floats([Math.floor(Math.random() * N_n_9_7_state.maxValue)]))
-                return
-            } else if (
-                G_msg_isMatching(m, [G_msg_STRING_TOKEN, G_msg_FLOAT_TOKEN])
-                && G_msg_readStringToken(m, 0) === 'seed'
-            ) {
-                console.log('WARNING : seed not implemented yet for [random]')
-                return
-            }
-        
-                            throw new Error('Node "n_9_7", inlet "0", unsupported message : ' + G_msg_display(m))
-                        }
-
-function N_n_9_8_rcvs_0(m) {
-                            
-            if (G_bangUtils_isBang(m)) {
-                N_n_0_22_rcvs_0(G_msg_floats([Math.floor(Math.random() * N_n_9_8_state.maxValue)]))
-                return
-            } else if (
-                G_msg_isMatching(m, [G_msg_STRING_TOKEN, G_msg_FLOAT_TOKEN])
-                && G_msg_readStringToken(m, 0) === 'seed'
-            ) {
-                console.log('WARNING : seed not implemented yet for [random]')
-                return
-            }
-        
-                            throw new Error('Node "n_9_8", inlet "0", unsupported message : ' + G_msg_display(m))
                         }
 
 
@@ -3029,452 +2751,6 @@ function N_n_7_26_rcvs_0(m) {
 
 
 
-function N_n_9_17_rcvs_0(m) {
-                            
-                if (
-                    G_msg_isStringToken(m, 0) 
-                    && G_msg_readStringToken(m, 0) === 'set'
-                ) {
-                    const outTemplate = []
-                    for (let i = 1; i < G_msg_getLength(m); i++) {
-                        if (G_msg_isFloatToken(m, i)) {
-                            outTemplate.push(G_msg_FLOAT_TOKEN)
-                        } else {
-                            outTemplate.push(G_msg_STRING_TOKEN)
-                            outTemplate.push(G_msg_readStringToken(m, i).length)
-                        }
-                    }
-
-                    const outMessage = G_msg_create(outTemplate)
-                    for (let i = 1; i < G_msg_getLength(m); i++) {
-                        if (G_msg_isFloatToken(m, i)) {
-                            G_msg_writeFloatToken(
-                                outMessage, i - 1, G_msg_readFloatToken(m, i)
-                            )
-                        } else {
-                            G_msg_writeStringToken(
-                                outMessage, i - 1, G_msg_readStringToken(m, i)
-                            )
-                        }
-                    }
-
-                    N_n_9_17_state.msgSpecs.splice(0, N_n_9_17_state.msgSpecs.length - 1)
-                    N_n_9_17_state.msgSpecs[0] = {
-                        transferFunction: function (m) {
-                            return N_n_9_17_state.msgSpecs[0].outMessage
-                        },
-                        outTemplate: outTemplate,
-                        outMessage: outMessage,
-                        send: "",
-                        hasSend: false,
-                    }
-                    return
-    
-                } else {
-                    for (let i = 0; i < N_n_9_17_state.msgSpecs.length; i++) {
-                        if (N_n_9_17_state.msgSpecs[i].hasSend) {
-                            G_msgBuses_publish(N_n_9_17_state.msgSpecs[i].send, N_n_9_17_state.msgSpecs[i].transferFunction(m))
-                        } else {
-                            N_n_9_1_rcvs_0(N_n_9_17_state.msgSpecs[i].transferFunction(m))
-                        }
-                    }
-                    return
-                }
-            
-                            throw new Error('Node "n_9_17", inlet "0", unsupported message : ' + G_msg_display(m))
-                        }
-
-function N_n_9_18_rcvs_0(m) {
-                            
-                if (
-                    G_msg_isStringToken(m, 0) 
-                    && G_msg_readStringToken(m, 0) === 'set'
-                ) {
-                    const outTemplate = []
-                    for (let i = 1; i < G_msg_getLength(m); i++) {
-                        if (G_msg_isFloatToken(m, i)) {
-                            outTemplate.push(G_msg_FLOAT_TOKEN)
-                        } else {
-                            outTemplate.push(G_msg_STRING_TOKEN)
-                            outTemplate.push(G_msg_readStringToken(m, i).length)
-                        }
-                    }
-
-                    const outMessage = G_msg_create(outTemplate)
-                    for (let i = 1; i < G_msg_getLength(m); i++) {
-                        if (G_msg_isFloatToken(m, i)) {
-                            G_msg_writeFloatToken(
-                                outMessage, i - 1, G_msg_readFloatToken(m, i)
-                            )
-                        } else {
-                            G_msg_writeStringToken(
-                                outMessage, i - 1, G_msg_readStringToken(m, i)
-                            )
-                        }
-                    }
-
-                    N_n_9_18_state.msgSpecs.splice(0, N_n_9_18_state.msgSpecs.length - 1)
-                    N_n_9_18_state.msgSpecs[0] = {
-                        transferFunction: function (m) {
-                            return N_n_9_18_state.msgSpecs[0].outMessage
-                        },
-                        outTemplate: outTemplate,
-                        outMessage: outMessage,
-                        send: "",
-                        hasSend: false,
-                    }
-                    return
-    
-                } else {
-                    for (let i = 0; i < N_n_9_18_state.msgSpecs.length; i++) {
-                        if (N_n_9_18_state.msgSpecs[i].hasSend) {
-                            G_msgBuses_publish(N_n_9_18_state.msgSpecs[i].send, N_n_9_18_state.msgSpecs[i].transferFunction(m))
-                        } else {
-                            N_n_9_2_rcvs_0(N_n_9_18_state.msgSpecs[i].transferFunction(m))
-                        }
-                    }
-                    return
-                }
-            
-                            throw new Error('Node "n_9_18", inlet "0", unsupported message : ' + G_msg_display(m))
-                        }
-
-function N_n_9_19_rcvs_0(m) {
-                            
-                if (
-                    G_msg_isStringToken(m, 0) 
-                    && G_msg_readStringToken(m, 0) === 'set'
-                ) {
-                    const outTemplate = []
-                    for (let i = 1; i < G_msg_getLength(m); i++) {
-                        if (G_msg_isFloatToken(m, i)) {
-                            outTemplate.push(G_msg_FLOAT_TOKEN)
-                        } else {
-                            outTemplate.push(G_msg_STRING_TOKEN)
-                            outTemplate.push(G_msg_readStringToken(m, i).length)
-                        }
-                    }
-
-                    const outMessage = G_msg_create(outTemplate)
-                    for (let i = 1; i < G_msg_getLength(m); i++) {
-                        if (G_msg_isFloatToken(m, i)) {
-                            G_msg_writeFloatToken(
-                                outMessage, i - 1, G_msg_readFloatToken(m, i)
-                            )
-                        } else {
-                            G_msg_writeStringToken(
-                                outMessage, i - 1, G_msg_readStringToken(m, i)
-                            )
-                        }
-                    }
-
-                    N_n_9_19_state.msgSpecs.splice(0, N_n_9_19_state.msgSpecs.length - 1)
-                    N_n_9_19_state.msgSpecs[0] = {
-                        transferFunction: function (m) {
-                            return N_n_9_19_state.msgSpecs[0].outMessage
-                        },
-                        outTemplate: outTemplate,
-                        outMessage: outMessage,
-                        send: "",
-                        hasSend: false,
-                    }
-                    return
-    
-                } else {
-                    for (let i = 0; i < N_n_9_19_state.msgSpecs.length; i++) {
-                        if (N_n_9_19_state.msgSpecs[i].hasSend) {
-                            G_msgBuses_publish(N_n_9_19_state.msgSpecs[i].send, N_n_9_19_state.msgSpecs[i].transferFunction(m))
-                        } else {
-                            N_n_9_3_rcvs_0(N_n_9_19_state.msgSpecs[i].transferFunction(m))
-                        }
-                    }
-                    return
-                }
-            
-                            throw new Error('Node "n_9_19", inlet "0", unsupported message : ' + G_msg_display(m))
-                        }
-
-function N_n_9_20_rcvs_0(m) {
-                            
-                if (
-                    G_msg_isStringToken(m, 0) 
-                    && G_msg_readStringToken(m, 0) === 'set'
-                ) {
-                    const outTemplate = []
-                    for (let i = 1; i < G_msg_getLength(m); i++) {
-                        if (G_msg_isFloatToken(m, i)) {
-                            outTemplate.push(G_msg_FLOAT_TOKEN)
-                        } else {
-                            outTemplate.push(G_msg_STRING_TOKEN)
-                            outTemplate.push(G_msg_readStringToken(m, i).length)
-                        }
-                    }
-
-                    const outMessage = G_msg_create(outTemplate)
-                    for (let i = 1; i < G_msg_getLength(m); i++) {
-                        if (G_msg_isFloatToken(m, i)) {
-                            G_msg_writeFloatToken(
-                                outMessage, i - 1, G_msg_readFloatToken(m, i)
-                            )
-                        } else {
-                            G_msg_writeStringToken(
-                                outMessage, i - 1, G_msg_readStringToken(m, i)
-                            )
-                        }
-                    }
-
-                    N_n_9_20_state.msgSpecs.splice(0, N_n_9_20_state.msgSpecs.length - 1)
-                    N_n_9_20_state.msgSpecs[0] = {
-                        transferFunction: function (m) {
-                            return N_n_9_20_state.msgSpecs[0].outMessage
-                        },
-                        outTemplate: outTemplate,
-                        outMessage: outMessage,
-                        send: "",
-                        hasSend: false,
-                    }
-                    return
-    
-                } else {
-                    for (let i = 0; i < N_n_9_20_state.msgSpecs.length; i++) {
-                        if (N_n_9_20_state.msgSpecs[i].hasSend) {
-                            G_msgBuses_publish(N_n_9_20_state.msgSpecs[i].send, N_n_9_20_state.msgSpecs[i].transferFunction(m))
-                        } else {
-                            N_n_9_4_rcvs_0(N_n_9_20_state.msgSpecs[i].transferFunction(m))
-                        }
-                    }
-                    return
-                }
-            
-                            throw new Error('Node "n_9_20", inlet "0", unsupported message : ' + G_msg_display(m))
-                        }
-
-function N_n_9_21_rcvs_0(m) {
-                            
-                if (
-                    G_msg_isStringToken(m, 0) 
-                    && G_msg_readStringToken(m, 0) === 'set'
-                ) {
-                    const outTemplate = []
-                    for (let i = 1; i < G_msg_getLength(m); i++) {
-                        if (G_msg_isFloatToken(m, i)) {
-                            outTemplate.push(G_msg_FLOAT_TOKEN)
-                        } else {
-                            outTemplate.push(G_msg_STRING_TOKEN)
-                            outTemplate.push(G_msg_readStringToken(m, i).length)
-                        }
-                    }
-
-                    const outMessage = G_msg_create(outTemplate)
-                    for (let i = 1; i < G_msg_getLength(m); i++) {
-                        if (G_msg_isFloatToken(m, i)) {
-                            G_msg_writeFloatToken(
-                                outMessage, i - 1, G_msg_readFloatToken(m, i)
-                            )
-                        } else {
-                            G_msg_writeStringToken(
-                                outMessage, i - 1, G_msg_readStringToken(m, i)
-                            )
-                        }
-                    }
-
-                    N_n_9_21_state.msgSpecs.splice(0, N_n_9_21_state.msgSpecs.length - 1)
-                    N_n_9_21_state.msgSpecs[0] = {
-                        transferFunction: function (m) {
-                            return N_n_9_21_state.msgSpecs[0].outMessage
-                        },
-                        outTemplate: outTemplate,
-                        outMessage: outMessage,
-                        send: "",
-                        hasSend: false,
-                    }
-                    return
-    
-                } else {
-                    for (let i = 0; i < N_n_9_21_state.msgSpecs.length; i++) {
-                        if (N_n_9_21_state.msgSpecs[i].hasSend) {
-                            G_msgBuses_publish(N_n_9_21_state.msgSpecs[i].send, N_n_9_21_state.msgSpecs[i].transferFunction(m))
-                        } else {
-                            N_n_9_5_rcvs_0(N_n_9_21_state.msgSpecs[i].transferFunction(m))
-                        }
-                    }
-                    return
-                }
-            
-                            throw new Error('Node "n_9_21", inlet "0", unsupported message : ' + G_msg_display(m))
-                        }
-
-function N_n_9_22_rcvs_0(m) {
-                            
-                if (
-                    G_msg_isStringToken(m, 0) 
-                    && G_msg_readStringToken(m, 0) === 'set'
-                ) {
-                    const outTemplate = []
-                    for (let i = 1; i < G_msg_getLength(m); i++) {
-                        if (G_msg_isFloatToken(m, i)) {
-                            outTemplate.push(G_msg_FLOAT_TOKEN)
-                        } else {
-                            outTemplate.push(G_msg_STRING_TOKEN)
-                            outTemplate.push(G_msg_readStringToken(m, i).length)
-                        }
-                    }
-
-                    const outMessage = G_msg_create(outTemplate)
-                    for (let i = 1; i < G_msg_getLength(m); i++) {
-                        if (G_msg_isFloatToken(m, i)) {
-                            G_msg_writeFloatToken(
-                                outMessage, i - 1, G_msg_readFloatToken(m, i)
-                            )
-                        } else {
-                            G_msg_writeStringToken(
-                                outMessage, i - 1, G_msg_readStringToken(m, i)
-                            )
-                        }
-                    }
-
-                    N_n_9_22_state.msgSpecs.splice(0, N_n_9_22_state.msgSpecs.length - 1)
-                    N_n_9_22_state.msgSpecs[0] = {
-                        transferFunction: function (m) {
-                            return N_n_9_22_state.msgSpecs[0].outMessage
-                        },
-                        outTemplate: outTemplate,
-                        outMessage: outMessage,
-                        send: "",
-                        hasSend: false,
-                    }
-                    return
-    
-                } else {
-                    for (let i = 0; i < N_n_9_22_state.msgSpecs.length; i++) {
-                        if (N_n_9_22_state.msgSpecs[i].hasSend) {
-                            G_msgBuses_publish(N_n_9_22_state.msgSpecs[i].send, N_n_9_22_state.msgSpecs[i].transferFunction(m))
-                        } else {
-                            N_n_9_6_rcvs_0(N_n_9_22_state.msgSpecs[i].transferFunction(m))
-                        }
-                    }
-                    return
-                }
-            
-                            throw new Error('Node "n_9_22", inlet "0", unsupported message : ' + G_msg_display(m))
-                        }
-
-function N_n_9_23_rcvs_0(m) {
-                            
-                if (
-                    G_msg_isStringToken(m, 0) 
-                    && G_msg_readStringToken(m, 0) === 'set'
-                ) {
-                    const outTemplate = []
-                    for (let i = 1; i < G_msg_getLength(m); i++) {
-                        if (G_msg_isFloatToken(m, i)) {
-                            outTemplate.push(G_msg_FLOAT_TOKEN)
-                        } else {
-                            outTemplate.push(G_msg_STRING_TOKEN)
-                            outTemplate.push(G_msg_readStringToken(m, i).length)
-                        }
-                    }
-
-                    const outMessage = G_msg_create(outTemplate)
-                    for (let i = 1; i < G_msg_getLength(m); i++) {
-                        if (G_msg_isFloatToken(m, i)) {
-                            G_msg_writeFloatToken(
-                                outMessage, i - 1, G_msg_readFloatToken(m, i)
-                            )
-                        } else {
-                            G_msg_writeStringToken(
-                                outMessage, i - 1, G_msg_readStringToken(m, i)
-                            )
-                        }
-                    }
-
-                    N_n_9_23_state.msgSpecs.splice(0, N_n_9_23_state.msgSpecs.length - 1)
-                    N_n_9_23_state.msgSpecs[0] = {
-                        transferFunction: function (m) {
-                            return N_n_9_23_state.msgSpecs[0].outMessage
-                        },
-                        outTemplate: outTemplate,
-                        outMessage: outMessage,
-                        send: "",
-                        hasSend: false,
-                    }
-                    return
-    
-                } else {
-                    for (let i = 0; i < N_n_9_23_state.msgSpecs.length; i++) {
-                        if (N_n_9_23_state.msgSpecs[i].hasSend) {
-                            G_msgBuses_publish(N_n_9_23_state.msgSpecs[i].send, N_n_9_23_state.msgSpecs[i].transferFunction(m))
-                        } else {
-                            N_n_9_7_rcvs_0(N_n_9_23_state.msgSpecs[i].transferFunction(m))
-                        }
-                    }
-                    return
-                }
-            
-                            throw new Error('Node "n_9_23", inlet "0", unsupported message : ' + G_msg_display(m))
-                        }
-
-function N_n_9_24_rcvs_0(m) {
-                            
-                if (
-                    G_msg_isStringToken(m, 0) 
-                    && G_msg_readStringToken(m, 0) === 'set'
-                ) {
-                    const outTemplate = []
-                    for (let i = 1; i < G_msg_getLength(m); i++) {
-                        if (G_msg_isFloatToken(m, i)) {
-                            outTemplate.push(G_msg_FLOAT_TOKEN)
-                        } else {
-                            outTemplate.push(G_msg_STRING_TOKEN)
-                            outTemplate.push(G_msg_readStringToken(m, i).length)
-                        }
-                    }
-
-                    const outMessage = G_msg_create(outTemplate)
-                    for (let i = 1; i < G_msg_getLength(m); i++) {
-                        if (G_msg_isFloatToken(m, i)) {
-                            G_msg_writeFloatToken(
-                                outMessage, i - 1, G_msg_readFloatToken(m, i)
-                            )
-                        } else {
-                            G_msg_writeStringToken(
-                                outMessage, i - 1, G_msg_readStringToken(m, i)
-                            )
-                        }
-                    }
-
-                    N_n_9_24_state.msgSpecs.splice(0, N_n_9_24_state.msgSpecs.length - 1)
-                    N_n_9_24_state.msgSpecs[0] = {
-                        transferFunction: function (m) {
-                            return N_n_9_24_state.msgSpecs[0].outMessage
-                        },
-                        outTemplate: outTemplate,
-                        outMessage: outMessage,
-                        send: "",
-                        hasSend: false,
-                    }
-                    return
-    
-                } else {
-                    for (let i = 0; i < N_n_9_24_state.msgSpecs.length; i++) {
-                        if (N_n_9_24_state.msgSpecs[i].hasSend) {
-                            G_msgBuses_publish(N_n_9_24_state.msgSpecs[i].send, N_n_9_24_state.msgSpecs[i].transferFunction(m))
-                        } else {
-                            N_n_9_8_rcvs_0(N_n_9_24_state.msgSpecs[i].transferFunction(m))
-                        }
-                    }
-                    return
-                }
-            
-                            throw new Error('Node "n_9_24", inlet "0", unsupported message : ' + G_msg_display(m))
-                        }
-
-
-
-
-
-
-
 
 
 
@@ -3662,16 +2938,6 @@ function N_n_7_25_snds_0(m) {
                         N_n_7_31_rcvs_0(m)
 N_n_7_34_rcvs_0(m)
                     }
-function N_n_9_25_snds_0(m) {
-                        N_n_9_17_rcvs_0(m)
-N_n_9_18_rcvs_0(m)
-N_n_9_19_rcvs_0(m)
-N_n_9_20_rcvs_0(m)
-N_n_9_21_rcvs_0(m)
-N_n_9_22_rcvs_0(m)
-N_n_9_23_rcvs_0(m)
-N_n_9_24_rcvs_0(m)
-                    }
 
         function COLD_0(m) {
                     N_m_n_7_13_1_sig_outs_0 = N_m_n_7_13_1_sig_state.currentValue
@@ -3715,16 +2981,10 @@ function IO_rcv_n_0_21_0(m) {
 function IO_rcv_n_0_22_0(m) {
                     N_n_0_22_rcvs_0(m)
                 }
-function IO_rcv_n_0_23_0(m) {
-                    N_n_0_23_rcvs_0(m)
-                }
-function IO_rcv_n_0_25_0(m) {
-                    N_n_0_25_rcvs_0(m)
-                }
         
 
         const exports = {
-            metadata: {"libVersion":"0.1.0","settings":{"audio":{"bitDepth":64,"channelCount":{"in":2,"out":2},"sampleRate":0,"blockSize":0},"io":{"messageReceivers":{"n_0_14":{"portletIds":["0"],"metadata":{"group":"control:float","type":"hsl","label":"VOL","position":[323,422],"initValue":0,"minValue":0,"maxValue":1}},"n_0_15":{"portletIds":["0"],"metadata":{"group":"control:float","type":"vsl","label":"01_FRQ","position":[53,193],"initValue":0,"minValue":0,"maxValue":127}},"n_0_16":{"portletIds":["0"],"metadata":{"group":"control:float","type":"vsl","label":"01_RUN","position":[103,193],"initValue":0,"minValue":0,"maxValue":127}},"n_0_17":{"portletIds":["0"],"metadata":{"group":"control:float","type":"vsl","label":"02_FRQ","position":[153,193],"initValue":0,"minValue":0,"maxValue":127}},"n_0_18":{"portletIds":["0"],"metadata":{"group":"control:float","type":"vsl","label":"02_RUN","position":[203,193],"initValue":0,"minValue":0,"maxValue":127}},"n_0_19":{"portletIds":["0"],"metadata":{"group":"control:float","type":"vsl","label":"FIL_FRQ","position":[53,353],"initValue":0,"minValue":0,"maxValue":127}},"n_0_20":{"portletIds":["0"],"metadata":{"group":"control:float","type":"vsl","label":"FIL_RES","position":[103,352],"initValue":0,"minValue":0,"maxValue":127}},"n_0_21":{"portletIds":["0"],"metadata":{"group":"control:float","type":"vsl","label":"FIL_RUN","position":[153,353],"initValue":0,"minValue":0,"maxValue":127}},"n_0_22":{"portletIds":["0"],"metadata":{"group":"control:float","type":"vsl","label":"FIL_SWP","position":[203,353],"initValue":0,"minValue":0,"maxValue":127}},"n_0_23":{"portletIds":["0"],"metadata":{"group":"control","type":"bng","label":"RESET","position":[147,56]}},"n_0_25":{"portletIds":["0"],"metadata":{"group":"control","type":"bng","label":"RAND","position":[94,56]}}},"messageSenders":{}}},"compilation":{"variableNamesIndex":{"io":{"messageReceivers":{"n_0_14":{"0":"IO_rcv_n_0_14_0"},"n_0_15":{"0":"IO_rcv_n_0_15_0"},"n_0_16":{"0":"IO_rcv_n_0_16_0"},"n_0_17":{"0":"IO_rcv_n_0_17_0"},"n_0_18":{"0":"IO_rcv_n_0_18_0"},"n_0_19":{"0":"IO_rcv_n_0_19_0"},"n_0_20":{"0":"IO_rcv_n_0_20_0"},"n_0_21":{"0":"IO_rcv_n_0_21_0"},"n_0_22":{"0":"IO_rcv_n_0_22_0"},"n_0_23":{"0":"IO_rcv_n_0_23_0"},"n_0_25":{"0":"IO_rcv_n_0_25_0"}},"messageSenders":{}},"globals":{"commons":{"getArray":"G_commons_getArray","setArray":"G_commons_setArray"}}}}},
+            metadata: {"libVersion":"0.1.0","settings":{"audio":{"bitDepth":64,"channelCount":{"in":2,"out":2},"sampleRate":0,"blockSize":0},"io":{"messageReceivers":{"n_0_14":{"portletIds":["0"],"metadata":{"group":"control:float","type":"hsl","label":"VOL","position":[323,422],"initValue":0,"minValue":0,"maxValue":1}},"n_0_15":{"portletIds":["0"],"metadata":{"group":"control:float","type":"vsl","label":"01_FRQ","position":[53,193],"initValue":0,"minValue":0,"maxValue":127}},"n_0_16":{"portletIds":["0"],"metadata":{"group":"control:float","type":"vsl","label":"01_RUN","position":[103,193],"initValue":0,"minValue":0,"maxValue":127}},"n_0_17":{"portletIds":["0"],"metadata":{"group":"control:float","type":"vsl","label":"02_FRQ","position":[153,193],"initValue":0,"minValue":0,"maxValue":127}},"n_0_18":{"portletIds":["0"],"metadata":{"group":"control:float","type":"vsl","label":"","position":[203,193],"initValue":0,"minValue":0,"maxValue":127}},"n_0_19":{"portletIds":["0"],"metadata":{"group":"control:float","type":"vsl","label":"FIL_FRQ","position":[53,353],"initValue":0,"minValue":0,"maxValue":127}},"n_0_20":{"portletIds":["0"],"metadata":{"group":"control:float","type":"vsl","label":"FIL_RES","position":[103,352],"initValue":0,"minValue":0,"maxValue":127}},"n_0_21":{"portletIds":["0"],"metadata":{"group":"control:float","type":"vsl","label":"FIL_RUN","position":[153,353],"initValue":0,"minValue":0,"maxValue":127}},"n_0_22":{"portletIds":["0"],"metadata":{"group":"control:float","type":"vsl","label":"FIL_SWP","position":[203,353],"initValue":0,"minValue":0,"maxValue":127}}},"messageSenders":{}}},"compilation":{"variableNamesIndex":{"io":{"messageReceivers":{"n_0_14":{"0":"IO_rcv_n_0_14_0"},"n_0_15":{"0":"IO_rcv_n_0_15_0"},"n_0_16":{"0":"IO_rcv_n_0_16_0"},"n_0_17":{"0":"IO_rcv_n_0_17_0"},"n_0_18":{"0":"IO_rcv_n_0_18_0"},"n_0_19":{"0":"IO_rcv_n_0_19_0"},"n_0_20":{"0":"IO_rcv_n_0_20_0"},"n_0_21":{"0":"IO_rcv_n_0_21_0"},"n_0_22":{"0":"IO_rcv_n_0_22_0"}},"messageSenders":{}},"globals":{"commons":{"getArray":"G_commons_getArray","setArray":"G_commons_setArray"}}}}},
             initialize: (sampleRate, blockSize) => {
                 exports.metadata.settings.audio.sampleRate = sampleRate
                 exports.metadata.settings.audio.blockSize = blockSize
@@ -3747,7 +3007,7 @@ function IO_rcv_n_0_25_0(m) {
                 N_n_0_15_state.messageReceiver = function (m) {
                     NT_vsl_receiveMessage(N_n_0_15_state, m)
                 }
-                NT_vsl_setReceiveBusName(N_n_0_15_state, "01_FRQ-SET")
+                NT_vsl_setReceiveBusName(N_n_0_15_state, "empty")
     
                 
             
@@ -3756,7 +3016,7 @@ function IO_rcv_n_0_25_0(m) {
                 N_n_0_16_state.messageReceiver = function (m) {
                     NT_vsl_receiveMessage(N_n_0_16_state, m)
                 }
-                NT_vsl_setReceiveBusName(N_n_0_16_state, "01_RUN-SET")
+                NT_vsl_setReceiveBusName(N_n_0_16_state, "empty")
     
                 
             
@@ -3765,7 +3025,7 @@ function IO_rcv_n_0_25_0(m) {
                 N_n_0_17_state.messageReceiver = function (m) {
                     NT_vsl_receiveMessage(N_n_0_17_state, m)
                 }
-                NT_vsl_setReceiveBusName(N_n_0_17_state, "02_FRQ-SET")
+                NT_vsl_setReceiveBusName(N_n_0_17_state, "empty")
     
                 
             
@@ -3783,7 +3043,7 @@ function IO_rcv_n_0_25_0(m) {
                 N_n_0_19_state.messageReceiver = function (m) {
                     NT_vsl_receiveMessage(N_n_0_19_state, m)
                 }
-                NT_vsl_setReceiveBusName(N_n_0_19_state, "FIL_FRQ-SET")
+                NT_vsl_setReceiveBusName(N_n_0_19_state, "empty")
     
                 
             
@@ -3792,7 +3052,7 @@ function IO_rcv_n_0_25_0(m) {
                 N_n_0_20_state.messageReceiver = function (m) {
                     NT_vsl_receiveMessage(N_n_0_20_state, m)
                 }
-                NT_vsl_setReceiveBusName(N_n_0_20_state, "FIL_RES-SET")
+                NT_vsl_setReceiveBusName(N_n_0_20_state, "empty")
     
                 
             
@@ -3801,7 +3061,7 @@ function IO_rcv_n_0_25_0(m) {
                 N_n_0_21_state.messageReceiver = function (m) {
                     NT_vsl_receiveMessage(N_n_0_21_state, m)
                 }
-                NT_vsl_setReceiveBusName(N_n_0_21_state, "FIL_RUN-SET")
+                NT_vsl_setReceiveBusName(N_n_0_21_state, "empty")
     
                 
             
@@ -3810,38 +3070,10 @@ function IO_rcv_n_0_25_0(m) {
                 N_n_0_22_state.messageReceiver = function (m) {
                     NT_vsl_receiveMessage(N_n_0_22_state, m)
                 }
-                NT_vsl_setReceiveBusName(N_n_0_22_state, "FIL_SWP-SET")
+                NT_vsl_setReceiveBusName(N_n_0_22_state, "empty")
     
                 
             
-
-        N_n_0_23_state.messageReceiver = function (m) {
-            NT_bang_receiveMessage(N_n_0_23_state, m)
-        }
-        N_n_0_23_state.messageSender = G_msg_VOID_MESSAGE_RECEIVER
-        NT_bang_setReceiveBusName(N_n_0_23_state, "RESET-SET")
-
-        
-    
-
-        N_n_0_25_state.messageReceiver = function (m) {
-            NT_bang_receiveMessage(N_n_0_25_state, m)
-        }
-        N_n_0_25_state.messageSender = N_n_0_26_rcvs_0
-        NT_bang_setReceiveBusName(N_n_0_25_state, "RAND-SET")
-
-        
-    
-
-
-
-
-
-
-
-
-
-
 
             G_msgBuses_subscribe("RESET", N_n_1_40_rcvs_0)
         
@@ -4290,297 +3522,6 @@ N_n_7_27_state.msgSpecs[0].outMessage = G_msg_create(N_n_7_27_state.msgSpecs[0].
             
         
 
-G_commons_waitFrame(0, () => N_n_9_25_snds_0(G_bangUtils_bang()))
-
-            N_n_9_17_state.msgSpecs = [
-                
-                    {
-                        transferFunction: function (inMessage) {
-                            
-                            return N_n_9_17_state.msgSpecs[0].outMessage
-                        },
-                        outTemplate: [],
-                        outMessage: G_msg_EMPTY_MESSAGE,
-                        send: "",
-                        hasSend: false,
-                    },
-            ]
-
-            
-        
-        
-        
-    
-N_n_9_17_state.msgSpecs[0].outTemplate = []
-
-                N_n_9_17_state.msgSpecs[0].outTemplate.push(G_msg_STRING_TOKEN)
-                N_n_9_17_state.msgSpecs[0].outTemplate.push(4)
-            
-
-                N_n_9_17_state.msgSpecs[0].outTemplate.push(G_msg_FLOAT_TOKEN)
-            
-N_n_9_17_state.msgSpecs[0].outMessage = G_msg_create(N_n_9_17_state.msgSpecs[0].outTemplate)
-
-                G_msg_writeStringToken(N_n_9_17_state.msgSpecs[0].outMessage, 0, "seed")
-            
-
-                G_msg_writeFloatToken(N_n_9_17_state.msgSpecs[0].outMessage, 1, 123)
-            
-        
-
-            N_n_9_18_state.msgSpecs = [
-                
-                    {
-                        transferFunction: function (inMessage) {
-                            
-                            return N_n_9_18_state.msgSpecs[0].outMessage
-                        },
-                        outTemplate: [],
-                        outMessage: G_msg_EMPTY_MESSAGE,
-                        send: "",
-                        hasSend: false,
-                    },
-            ]
-
-            
-        
-        
-        
-    
-N_n_9_18_state.msgSpecs[0].outTemplate = []
-
-                N_n_9_18_state.msgSpecs[0].outTemplate.push(G_msg_STRING_TOKEN)
-                N_n_9_18_state.msgSpecs[0].outTemplate.push(4)
-            
-
-                N_n_9_18_state.msgSpecs[0].outTemplate.push(G_msg_FLOAT_TOKEN)
-            
-N_n_9_18_state.msgSpecs[0].outMessage = G_msg_create(N_n_9_18_state.msgSpecs[0].outTemplate)
-
-                G_msg_writeStringToken(N_n_9_18_state.msgSpecs[0].outMessage, 0, "seed")
-            
-
-                G_msg_writeFloatToken(N_n_9_18_state.msgSpecs[0].outMessage, 1, 234)
-            
-        
-
-            N_n_9_19_state.msgSpecs = [
-                
-                    {
-                        transferFunction: function (inMessage) {
-                            
-                            return N_n_9_19_state.msgSpecs[0].outMessage
-                        },
-                        outTemplate: [],
-                        outMessage: G_msg_EMPTY_MESSAGE,
-                        send: "",
-                        hasSend: false,
-                    },
-            ]
-
-            
-        
-        
-        
-    
-N_n_9_19_state.msgSpecs[0].outTemplate = []
-
-                N_n_9_19_state.msgSpecs[0].outTemplate.push(G_msg_STRING_TOKEN)
-                N_n_9_19_state.msgSpecs[0].outTemplate.push(4)
-            
-
-                N_n_9_19_state.msgSpecs[0].outTemplate.push(G_msg_FLOAT_TOKEN)
-            
-N_n_9_19_state.msgSpecs[0].outMessage = G_msg_create(N_n_9_19_state.msgSpecs[0].outTemplate)
-
-                G_msg_writeStringToken(N_n_9_19_state.msgSpecs[0].outMessage, 0, "seed")
-            
-
-                G_msg_writeFloatToken(N_n_9_19_state.msgSpecs[0].outMessage, 1, 345)
-            
-        
-
-            N_n_9_20_state.msgSpecs = [
-                
-                    {
-                        transferFunction: function (inMessage) {
-                            
-                            return N_n_9_20_state.msgSpecs[0].outMessage
-                        },
-                        outTemplate: [],
-                        outMessage: G_msg_EMPTY_MESSAGE,
-                        send: "",
-                        hasSend: false,
-                    },
-            ]
-
-            
-        
-        
-        
-    
-N_n_9_20_state.msgSpecs[0].outTemplate = []
-
-                N_n_9_20_state.msgSpecs[0].outTemplate.push(G_msg_STRING_TOKEN)
-                N_n_9_20_state.msgSpecs[0].outTemplate.push(4)
-            
-
-                N_n_9_20_state.msgSpecs[0].outTemplate.push(G_msg_FLOAT_TOKEN)
-            
-N_n_9_20_state.msgSpecs[0].outMessage = G_msg_create(N_n_9_20_state.msgSpecs[0].outTemplate)
-
-                G_msg_writeStringToken(N_n_9_20_state.msgSpecs[0].outMessage, 0, "seed")
-            
-
-                G_msg_writeFloatToken(N_n_9_20_state.msgSpecs[0].outMessage, 1, 456)
-            
-        
-
-            N_n_9_21_state.msgSpecs = [
-                
-                    {
-                        transferFunction: function (inMessage) {
-                            
-                            return N_n_9_21_state.msgSpecs[0].outMessage
-                        },
-                        outTemplate: [],
-                        outMessage: G_msg_EMPTY_MESSAGE,
-                        send: "",
-                        hasSend: false,
-                    },
-            ]
-
-            
-        
-        
-        
-    
-N_n_9_21_state.msgSpecs[0].outTemplate = []
-
-                N_n_9_21_state.msgSpecs[0].outTemplate.push(G_msg_STRING_TOKEN)
-                N_n_9_21_state.msgSpecs[0].outTemplate.push(4)
-            
-
-                N_n_9_21_state.msgSpecs[0].outTemplate.push(G_msg_FLOAT_TOKEN)
-            
-N_n_9_21_state.msgSpecs[0].outMessage = G_msg_create(N_n_9_21_state.msgSpecs[0].outTemplate)
-
-                G_msg_writeStringToken(N_n_9_21_state.msgSpecs[0].outMessage, 0, "seed")
-            
-
-                G_msg_writeFloatToken(N_n_9_21_state.msgSpecs[0].outMessage, 1, 567)
-            
-        
-
-            N_n_9_22_state.msgSpecs = [
-                
-                    {
-                        transferFunction: function (inMessage) {
-                            
-                            return N_n_9_22_state.msgSpecs[0].outMessage
-                        },
-                        outTemplate: [],
-                        outMessage: G_msg_EMPTY_MESSAGE,
-                        send: "",
-                        hasSend: false,
-                    },
-            ]
-
-            
-        
-        
-        
-    
-N_n_9_22_state.msgSpecs[0].outTemplate = []
-
-                N_n_9_22_state.msgSpecs[0].outTemplate.push(G_msg_STRING_TOKEN)
-                N_n_9_22_state.msgSpecs[0].outTemplate.push(4)
-            
-
-                N_n_9_22_state.msgSpecs[0].outTemplate.push(G_msg_FLOAT_TOKEN)
-            
-N_n_9_22_state.msgSpecs[0].outMessage = G_msg_create(N_n_9_22_state.msgSpecs[0].outTemplate)
-
-                G_msg_writeStringToken(N_n_9_22_state.msgSpecs[0].outMessage, 0, "seed")
-            
-
-                G_msg_writeFloatToken(N_n_9_22_state.msgSpecs[0].outMessage, 1, 678)
-            
-        
-
-            N_n_9_23_state.msgSpecs = [
-                
-                    {
-                        transferFunction: function (inMessage) {
-                            
-                            return N_n_9_23_state.msgSpecs[0].outMessage
-                        },
-                        outTemplate: [],
-                        outMessage: G_msg_EMPTY_MESSAGE,
-                        send: "",
-                        hasSend: false,
-                    },
-            ]
-
-            
-        
-        
-        
-    
-N_n_9_23_state.msgSpecs[0].outTemplate = []
-
-                N_n_9_23_state.msgSpecs[0].outTemplate.push(G_msg_STRING_TOKEN)
-                N_n_9_23_state.msgSpecs[0].outTemplate.push(4)
-            
-
-                N_n_9_23_state.msgSpecs[0].outTemplate.push(G_msg_FLOAT_TOKEN)
-            
-N_n_9_23_state.msgSpecs[0].outMessage = G_msg_create(N_n_9_23_state.msgSpecs[0].outTemplate)
-
-                G_msg_writeStringToken(N_n_9_23_state.msgSpecs[0].outMessage, 0, "seed")
-            
-
-                G_msg_writeFloatToken(N_n_9_23_state.msgSpecs[0].outMessage, 1, 789)
-            
-        
-
-            N_n_9_24_state.msgSpecs = [
-                
-                    {
-                        transferFunction: function (inMessage) {
-                            
-                            return N_n_9_24_state.msgSpecs[0].outMessage
-                        },
-                        outTemplate: [],
-                        outMessage: G_msg_EMPTY_MESSAGE,
-                        send: "",
-                        hasSend: false,
-                    },
-            ]
-
-            
-        
-        
-        
-    
-N_n_9_24_state.msgSpecs[0].outTemplate = []
-
-                N_n_9_24_state.msgSpecs[0].outTemplate.push(G_msg_STRING_TOKEN)
-                N_n_9_24_state.msgSpecs[0].outTemplate.push(4)
-            
-
-                N_n_9_24_state.msgSpecs[0].outTemplate.push(G_msg_FLOAT_TOKEN)
-            
-N_n_9_24_state.msgSpecs[0].outMessage = G_msg_create(N_n_9_24_state.msgSpecs[0].outTemplate)
-
-                G_msg_writeStringToken(N_n_9_24_state.msgSpecs[0].outMessage, 0, "seed")
-            
-
-                G_msg_writeFloatToken(N_n_9_24_state.msgSpecs[0].outMessage, 1, 890)
-            
-        
-
-
 
 
 
@@ -4948,12 +3889,6 @@ n_0_21: {
                         },
 n_0_22: {
                             "0": IO_rcv_n_0_22_0,
-                        },
-n_0_23: {
-                            "0": IO_rcv_n_0_23_0,
-                        },
-n_0_25: {
-                            "0": IO_rcv_n_0_25_0,
                         },
                 },
                 messageSenders: {

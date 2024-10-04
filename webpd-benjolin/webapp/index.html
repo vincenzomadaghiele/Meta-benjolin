@@ -27,178 +27,51 @@
         </style>
     </head>
     <body>
-        <h1>My Web Page</h1>
-        <div>For more info about usage (how to interact with the patch), you can open this HTML file in a code editor.</div>
+        <h1>WebPD Benjolin</h1>
         <button id="start"> Start </button>
         <div id="loading"> Loading ... </div>
+
+        <h5>Volume:</h5>
+         <div class="slidecontainer">
+            <input type="range" min="0" max="127" value="50" class="slider" id="volume-slider">
+        </div>
+
+        <h5>01_FRQ:</h5>
+         <div class="slidecontainer">
+            <input type="range" min="0" max="127" value="50" class="slider" id="01_FRQ-slider">
+        </div>
+        <h5>01_RUN:</h5>
+         <div class="slidecontainer">
+            <input type="range" min="0" max="127" value="50" class="slider" id="01_RUN-slider">
+        </div>
+        <h5>02_FRQ:</h5>
+         <div class="slidecontainer">
+            <input type="range" min="0" max="127" value="50" class="slider" id="02_FRQ-slider">
+        </div>
+        <h5>02_RUN:</h5>
+         <div class="slidecontainer">
+            <input type="range" min="0" max="127" value="50" class="slider" id="02_RUN-slider">
+        </div>
+
+        <h5>FIL_FRQ:</h5>
+         <div class="slidecontainer">
+            <input type="range" min="0" max="127" value="50" class="slider" id="FIL_FRQ-slider">
+        </div>
+        <h5>FIL_RES:</h5>
+         <div class="slidecontainer">
+            <input type="range" min="0" max="127" value="50" class="slider" id="FIL_RES-slider">
+        </div>
+        <h5>FIL_RUN:</h5>
+         <div class="slidecontainer">
+            <input type="range" min="0" max="127" value="50" class="slider" id="FIL_RUN-slider">
+        </div>
+        <h5>FIL_SWP:</h5>
+         <div class="slidecontainer">
+            <input type="range" min="0" max="127" value="50" class="slider" id="FIL_SWP-slider">
+        </div>
+
         <script src="webpd-runtime.js"></script>
-        <script>
-            // SUMMARY
-            // 1. WEB PAGE INITIALIZATION
-            // 2. SENDING MESSAGES FROM JAVASCRIPT TO THE PATCH
-            // 3. SENDING MESSAGES FROM THE PATCH TO JAVASCRIPT (coming soon ...)
+        <script src="interaction.js"></script>
 
-
-            // ------------- 1. WEB PAGE INITIALIZATION
-            const loadingDiv = document.querySelector('#loading')
-            const startButton = document.querySelector('#start')
-            const audioContext = new AudioContext()
-
-            let patch = null
-            let stream = null
-            let webpdNode = null
-
-            const initApp = async () => {
-                // Register the worklet
-                await WebPdRuntime.initialize(audioContext)
-
-                // Fetch the patch code
-                response = await fetch('patch.js')
-                patch = await response.text()
-
-                // Comment this if you don't need audio input
-                stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-
-                // Hide loading and show start button
-                loadingDiv.style.display = 'none'
-                startButton.style.display = 'block'
-            }
-
-            const startApp = async () => {
-                // AudioContext needs to be resumed on click to protects users 
-                // from being spammed with autoplay.
-                // See : https://github.com/WebAudio/web-audio-api/issues/345
-                if (audioContext.state === 'suspended') {
-                    audioContext.resume()
-                }
-
-                // Setup web audio graph
-                webpdNode = await WebPdRuntime.run(
-                    audioContext, 
-                    patch, 
-                    WebPdRuntime.defaultSettingsForRun('./patch.js'),
-                )
-                webpdNode.connect(audioContext.destination)
-
-                // Comment this if you don't need audio input
-                const sourceNode = audioContext.createMediaStreamSource(stream)
-                sourceNode.connect(webpdNode)
-
-                // Hide the start button
-                startButton.style.display = 'none'
-
-                sendMsgToWebPd('n_0_14', '0', [0.8]); // volume
-
-                sendMsgToWebPd('n_0_15', '0', [Math.random()*127]); // volume
-                sendMsgToWebPd('n_0_16', '0', [Math.random()*127]); // volume
-                sendMsgToWebPd('n_0_17', '0', [Math.random()*127]); // volume
-                sendMsgToWebPd('n_0_18', '0', [Math.random()*127]); // volume
-                sendMsgToWebPd('n_0_19', '0', [Math.random()*127]); // volume
-                sendMsgToWebPd('n_0_20', '0', [Math.random()*127]); // volume
-                sendMsgToWebPd('n_0_21', '0', [Math.random()*127]); // volume
-                sendMsgToWebPd('n_0_22', '0', [Math.random()*127]); // volume
-
-            }
-
-            startButton.onclick = startApp
-
-            initApp().
-                then(() => {
-                    console.log('App initialized')
-
-                })
-
-            
-            // ------------- 2. SENDING MESSAGES FROM JAVASCRIPT TO THE PATCH
-            // Use the function sendMsgToWebPd to send a message from JavaScript to an object inside your patch.
-            // 
-            // Parameters : 
-            // - nodeId: the ID of the object you want to send a message to. 
-            //          This ID is a string that has been assigned by WebPd at compilation.
-            //          You can find below the list of available IDs with hints to help you 
-            //          identify the object you want to interact with.
-            // - portletId : the ID of the object portlet to which the message should be sent. 
-            // - message : the message to send. This must be a list of strings and / or numbers.
-            // 
-            // Examples :
-            // - sending a message to a bang node of ID 'n_0_1' :
-            //          sendMsgToWebPd('n_0_1', '0', ['bang'])
-            // - sending a message to a number object of ID 'n_0_2' :
-            //          sendMsgToWebPd('n_0_2', '0', [123])
-            // 
-            const sendMsgToWebPd = (nodeId, portletId, message) => {
-                webpdNode.port.postMessage({
-                    type: 'io:messageReceiver',
-                    payload: {
-                        nodeId,
-                        portletId,
-                        message,
-                    },
-                })
-            }
-            
-            // Here is an index of objects IDs to which you can send messages, with hints so you can find the right ID.
-            // Note that by default only GUI objects (bangs, sliders, etc ...) are available.
-            //  - nodeId "n_0_14" portletId "0"
-            //      * type "hsl"
-            //      * position [323,422]
-            //      * label "VOL"
-            
-            //  - nodeId "n_0_15" portletId "0"
-            //      * type "vsl"
-            //      * position [53,193]
-            //      * label "01_FRQ"
-            
-            //  - nodeId "n_0_16" portletId "0"
-            //      * type "vsl"
-            //      * position [103,193]
-            //      * label "01_RUN"
-            
-            //  - nodeId "n_0_17" portletId "0"
-            //      * type "vsl"
-            //      * position [153,193]
-            //      * label "02_FRQ"
-            
-            //  - nodeId "n_0_18" portletId "0"
-            //      * type "vsl"
-            //      * position [203,193]
-            //      * label "02_RUN"
-            
-            //  - nodeId "n_0_19" portletId "0"
-            //      * type "vsl"
-            //      * position [53,353]
-            //      * label "FIL_FRQ"
-            
-            //  - nodeId "n_0_20" portletId "0"
-            //      * type "vsl"
-            //      * position [103,352]
-            //      * label "FIL_RES"
-            
-            //  - nodeId "n_0_21" portletId "0"
-            //      * type "vsl"
-            //      * position [153,353]
-            //      * label "FIL_RUN"
-            
-            //  - nodeId "n_0_22" portletId "0"
-            //      * type "vsl"
-            //      * position [203,353]
-            //      * label "FIL_SWP"
-            
-            //  - nodeId "n_0_23" portletId "0"
-            //      * type "bng"
-            //      * position [147,56]
-            //      * label "RESET"
-            
-            //  - nodeId "n_0_25" portletId "0"
-            //      * type "bng"
-            //      * position [94,56]
-            //      * label "RAND"
-            
-
-
-            // ------------- 3. SENDING MESSAGES FROM THE PATCH TO JAVASCRIPT
-            // Coming soon ... 
-
-        </script>
     </body>
 </html>
