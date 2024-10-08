@@ -1,10 +1,3 @@
-// TODO
-// - beautify
-// - live scope
-// - credits
-// - deploy
-
-
 // SUMMARY
 // 1. WEB PAGE INITIALIZATION
 // 2. SENDING MESSAGES FROM JAVASCRIPT TO THE PATCH
@@ -71,8 +64,8 @@ startButton.onclick = startApp
 initApp().
     then(() => {
         console.log('App initialized')
-
     })
+
 
 function randomSettings(){
 
@@ -108,33 +101,6 @@ function randomSettings(){
 
 }
 
-// ------------- 2. SENDING MESSAGES FROM JAVASCRIPT TO THE PATCH
-// Use the function sendMsgToWebPd to send a message from JavaScript to an object inside your patch.
-// 
-// Parameters : 
-// - nodeId: the ID of the object you want to send a message to. 
-//          This ID is a string that has been assigned by WebPd at compilation.
-//          You can find below the list of available IDs with hints to help you 
-//          identify the object you want to interact with.
-// - portletId : the ID of the object portlet to which the message should be sent. 
-// - message : the message to send. This must be a list of strings and / or numbers.
-// 
-// Examples :
-// - sending a message to a bang node of ID 'n_0_1' :
-//          sendMsgToWebPd('n_0_1', '0', ['bang'])
-// - sending a message to a number object of ID 'n_0_2' :
-//          sendMsgToWebPd('n_0_2', '0', [123])
-// 
-const sendMsgToWebPd = (nodeId, portletId, message) => {
-    webpdNode.port.postMessage({
-        type: 'io:messageReceiver',
-        payload: {
-            nodeId,
-            portletId,
-            message,
-        },
-    })
-}
 
 var vol_slider = document.getElementById("volume-slider");
 
@@ -189,65 +155,128 @@ fILSWP_slider.oninput = function() {
 } 
 
 
+var randomButton = document.getElementById('random');
+randomButton.onclick = function() {
+    sendMsgToWebPd('n_0_23', '0', [ Number(1) ]); // random
+}
+
+var recordButton = document.getElementById('record');
+recordButton.onclick = function() {
+    sendMsgToWebPd('n_0_41', '0', [ Number(1) ]); // record
+}
+
+
+// ------------- 2. SENDING MESSAGES FROM JAVASCRIPT TO THE PATCH
+// Use the function sendMsgToWebPd to send a message from JavaScript to an object inside your patch.
+// 
+// Parameters : 
+// - nodeId: the ID of the object you want to send a message to. 
+//          This ID is a string that has been assigned by WebPd at compilation.
+//          You can find below the list of available IDs with hints to help you 
+//          identify the object you want to interact with.
+// - portletId : the ID of the object portlet to which the message should be sent. 
+// - message : the message to send. This must be a list of strings and / or numbers.
+// 
+// Examples :
+// - sending a message to a bang node of ID 'n_0_1' :
+//          sendMsgToWebPd('n_0_1', '0', ['bang'])
+// - sending a message to a number object of ID 'n_0_2' :
+//          sendMsgToWebPd('n_0_2', '0', [123])
+// 
+const sendMsgToWebPd = (nodeId, portletId, message) => {
+    webpdNode.port.postMessage({
+        type: 'io:messageReceiver',
+        payload: {
+            nodeId,
+            portletId,
+            message,
+        },
+    })
+}
 
 // Here is an index of objects IDs to which you can send messages, with hints so you can find the right ID.
 // Note that by default only GUI objects (bangs, sliders, etc ...) are available.
 //  - nodeId "n_0_14" portletId "0"
 //      * type "hsl"
-//      * position [323,422]
+//      * position [328,455]
 //      * label "VOL"
 
 //  - nodeId "n_0_15" portletId "0"
 //      * type "vsl"
-//      * position [53,193]
+//      * position [58,226]
 //      * label "01_FRQ"
 
 //  - nodeId "n_0_16" portletId "0"
 //      * type "vsl"
-//      * position [103,193]
+//      * position [108,226]
 //      * label "01_RUN"
 
 //  - nodeId "n_0_17" portletId "0"
 //      * type "vsl"
-//      * position [153,193]
+//      * position [158,226]
 //      * label "02_FRQ"
 
 //  - nodeId "n_0_18" portletId "0"
 //      * type "vsl"
-//      * position [203,193]
+//      * position [208,226]
 //      * label "02_RUN"
 
 //  - nodeId "n_0_19" portletId "0"
 //      * type "vsl"
-//      * position [53,353]
+//      * position [58,386]
 //      * label "FIL_FRQ"
 
 //  - nodeId "n_0_20" portletId "0"
 //      * type "vsl"
-//      * position [103,352]
+//      * position [108,385]
 //      * label "FIL_RES"
 
 //  - nodeId "n_0_21" portletId "0"
 //      * type "vsl"
-//      * position [153,353]
+//      * position [158,386]
 //      * label "FIL_RUN"
 
 //  - nodeId "n_0_22" portletId "0"
 //      * type "vsl"
-//      * position [203,353]
+//      * position [208,386]
 //      * label "FIL_SWP"
 
 //  - nodeId "n_0_23" portletId "0"
-//      * type "bng"
-//      * position [147,56]
-//      * label "RESET"
+//      * type "tgl"
+//      * position [102,53]
+//      * label "RANDOM"
 
-//  - nodeId "n_0_25" portletId "0"
+//  - nodeId "n_0_24" portletId "0"
 //      * type "bng"
-//      * position [94,56]
-//      * label "RAND"
+//      * position [102,77]
+
+//  - nodeId "n_0_34" portletId "0"
+//      * type "msg"
+//      * position [516,469]
+
+//  - nodeId "n_0_36" portletId "0"
+//      * type "msg"
+//      * position [516,442]
+
+//  - nodeId "n_0_37" portletId "0"
+//      * type "msg"
+//      * position [556,442]
+
+//  - nodeId "n_0_38" portletId "0"
+//      * type "bng"
+//      * position [516,367]
+
+//  - nodeId "n_0_40" portletId "0"
+//      * type "bng"
+//      * position [609,442]
+
+//  - nodeId "n_0_41" portletId "0"
+//      * type "tgl"
+//      * position [516,339]
+//      * label "RECORD"
 
 
 
 // ------------- 3. SENDING MESSAGES FROM THE PATCH TO JAVASCRIPT
 // Coming soon ... 
+

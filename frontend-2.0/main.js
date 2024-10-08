@@ -24,7 +24,7 @@ window.addEventListener( 'resize', graphicsOnResize );
 function graphicsOnResize() {
     // update timeline
     R_timeline.setSize(50, window.innerHeight - (90 + 60 + 20));
-    path_timeline.attr({})
+    //path_timeline.attr({});
     timeline_pathArray[1][2] = window.innerHeight - (90 + 60 +50);
     path_timeline.attr({path: timeline_pathArray});
 
@@ -499,6 +499,7 @@ document.getElementById("insert-crossfade").addEventListener("click", (event) =>
     }
 }); 
 
+// INSERT MEANDER BUTTON
 document.getElementById("insert-meander").addEventListener("mouseover", (event) => {
     if ( !ISPLAYBACKON ){    
         highlightNone(); 
@@ -513,6 +514,7 @@ document.getElementById("insert-meander").addEventListener("click", (event) => {
     }
 }); 
 
+// TRASH BIN BUTTON
 document.getElementById("bin").addEventListener("mouseover", (event) => {
     if ( !ISPLAYBACKON ){
         highlightNone(); 
@@ -552,8 +554,7 @@ function removeElement(element_index){
     console.log(compositionArray);
 }
 
-
-
+// PLAY BUTTON
 document.getElementById("play").addEventListener("mouseover", (event) => {
     if ( !ISPLAYBACKON ){
         highlightAll(); 
@@ -611,7 +612,7 @@ function disableAllInteractions(){
     }
 }
 
-
+// STOP BUTTON
 document.getElementById("stop").addEventListener("mouseover", (event) => {
     highlightNone(); 
     event.target.style["cursor"] = "pointer";
@@ -799,33 +800,76 @@ function dragLeave(e) {
 
     if (index_draggable != index_target){
         
-        // locate boxes to swap
+        // locate boxes to prepend
         let draggable_node = document.getElementById("box "+index_draggable);
         let target_node = document.getElementById("box "+index_target);
-        console.log('swapping box '+ index_draggable + ' with box '+ index_target);
-        let parent = e.target.parentElement;
-        // swap boxes
-        exchangeElements(draggable_node, target_node);
-        [compositionArray[index_draggable], compositionArray[index_target]] = [compositionArray[index_target], compositionArray[index_draggable]];
-        [raphaels[index_draggable], raphaels[index_target]] = [raphaels[index_target], raphaels[index_draggable]];
+        console.log('prepending box '+ index_draggable + ' on top of box '+ index_target);
+        let parent = document.getElementById("composition-bar");
+        
+        // prepend boxes
+        prependElement(draggable_node, target_node);
+        var compositionElementDraggable = compositionArray[index_draggable];
+        var raphaelDraggable = raphaels[index_draggable];
+        if (index_draggable > index_target) { 
+            compositionArray.splice(index_draggable, 1);
+            compositionArray.splice(index_target, 0, compositionElementDraggable);
+    
+            raphaels.splice(index_draggable, 1);
+            raphaels.splice(index_target, 0, raphaelDraggable);    
+        } else {
+            compositionArray.splice(index_target, 0, compositionElementDraggable);
+            compositionArray.splice(index_draggable, 1);
+    
+            raphaels.splice(index_target, 0, raphaelDraggable);    
+            raphaels.splice(index_draggable, 1);
+
+        }
 
         // correct ids
-        let new_target_node = document.getElementById('box '+ (index_target));
+        for ( let i = 0; i < parent.children.length; i++ ) {
+            let node = parent.children[i];
+            node.id = 'box ' + (i);    
+        }
+
+        /*
         let new_draggable_node = document.getElementById('box '+ (index_draggable)); 
-        new_target_node.id = 'box ' + (index_draggable);
         new_draggable_node.id = 'box ' + (index_target);
+        for ( let i = index_target+1; i < parent.children.length; i++ ) {
+            let node = parent.children[i];
+            node.id = 'box ' + (i);    
+            console.log(i);
+        }*/
+
+        //[compositionArray[index_draggable], compositionArray[index_target]] = [compositionArray[index_target], compositionArray[index_draggable]];
+        //[raphaels[index_draggable], raphaels[index_target]] = [raphaels[index_target], raphaels[index_draggable]];
+
+        // correct ids
+        //let new_target_node = document.getElementById('box '+ (index_target));
+        //let new_draggable_node = document.getElementById('box '+ (index_draggable)); 
+        //new_target_node.id = 'box ' + (index_draggable);
+        //new_draggable_node.id = 'box ' + (index_target);
 
     }
-    // display the draggable element
-    //draggable.classList.remove('hide');
     // update scatterplot representation
 }
 
+function prependElement( element1, element2 ){
+
+    var clonedElement1 = element1.cloneNode(true);
+    var clonedElement2 = element2.cloneNode(true);
+    element2.parentNode.replaceChild(clonedElement1, element1);
+    element2.parentNode.replaceChild(clonedElement2, element2);
+    clonedElement2.parentNode.insertBefore( element1, clonedElement2 );
+    clonedElement2.parentNode.replaceChild( element2, clonedElement2 );
+    clonedElement1.remove();
+
+}
 
 // exchange boxes
 function exchangeElements(element1, element2){
-    var clonedElement1 = element1.cloneNode(true);
-    var clonedElement2 = element2.cloneNode(true);
+
+    clonedElement2.parentNode.replaceChild( element1, clonedElement1 );
+    clonedElement2.parentNode.replaceChild( element2, clonedElement2 );
     element2.parentNode.replaceChild(clonedElement1, element2);
     element1.parentNode.replaceChild(clonedElement2, element1);
     clonedElement1.parentNode.replaceChild(element1, clonedElement1);
