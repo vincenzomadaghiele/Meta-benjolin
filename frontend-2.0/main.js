@@ -136,16 +136,20 @@ function drawBox(boxx, boxy, boxz, colorHue, arrayIndex){
         newBox.addEventListener("mouseover", (event) => {
             if ( !ISPLAYBACKON ){
                 let item_index = Number(newBox.id.split(" ")[1])
-                highlightBox( item_index);
+                highlightBox( item_index );
                 event.target.style["cursor"] = "pointer";
             }
         }); 
         // CLICK INTERACTION
         newBox.addEventListener("click", (event) => {
             if ( !ISPLAYBACKON ){
+                for (var i = 0; i < singlePlaybackTimeouts.length; i++) {
+                    clearTimeout(singlePlaybackTimeouts[i]);
+                }            
                 let item_index = Number(newBox.id.split(" ")[1])
                 SELECTED_ELEMENT = item_index;
-                highlightBox( item_index); 
+                highlightBox( item_index ); 
+                playBox( item_index );
             }
         }); 
         // DRAG AND DROP INTERACTION
@@ -247,9 +251,13 @@ function drawCrossfade(){
         // CLICK INTERACTION
         newBox.addEventListener("click", (event) => {
             if ( !ISPLAYBACKON ){
+                for (var i = 0; i < singlePlaybackTimeouts.length; i++) {
+                    clearTimeout(singlePlaybackTimeouts[i]);
+                }            
                 let item_index = Number(newBox.id.split(" ")[1])
                 SELECTED_ELEMENT = item_index;
                 highlightBox(item_index); 
+                playBox( SELECTED_ELEMENT );
             }
         });
         // DRAG AND DROP INTERACTION
@@ -367,9 +375,13 @@ function drawMeander(){
         // CLICK INTERACTION
         newBox.addEventListener("click", (event) => {
             if ( !ISPLAYBACKON ){
+                for (var i = 0; i < singlePlaybackTimeouts.length; i++) {
+                    clearTimeout(singlePlaybackTimeouts[i]);
+                }            
                 let item_index = Number(newBox.id.split(" ")[1])
                 SELECTED_ELEMENT = item_index;
                 highlightBox(item_index); 
+                playBox( SELECTED_ELEMENT );
             }
         }); 
         // DRAG AND DROP INTERACTION
@@ -428,11 +440,11 @@ var up_meander = function () {
 
 
 // DEMO OBJECTS (WHEN BOXES ARE EXCHANGED NEEDS TO BE EXCHANGED IN "raphaels")
-drawBox(0, 0, 0, Math.random(), 10000);
-drawCrossfade();
-drawBox(0, 0, 0, Math.random(), 10000);
-drawMeander();
-drawBox(0, 0, 0, Math.random(), 10000);
+//drawBox(0, 0, 0, Math.random(), 10000);
+//drawCrossfade();
+//drawBox(0, 0, 0, Math.random(), 10000);
+//drawMeander();
+//drawBox(0, 0, 0, Math.random(), 10000);
 
 
 
@@ -470,6 +482,84 @@ function highlightBox (box_n){
             el.attr({"opacity": SELECTED_OPACITY});
         });
     }
+}
+
+const singlePlaybackTimeouts = [];
+function loopCrossfade( box_n ){
+    sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y);
+    sendCrossfade(compositionArray[box_n-1].x, compositionArray[box_n-1].y, 
+        compositionArray[box_n+1].x, compositionArray[box_n+1].y, 
+        compositionArray[box_n].duration / 1000);
+    var selectedBoxTimeout = setTimeout(function() {
+        if ( SELECTED_ELEMENT != null ){
+            loopCrossfade( box_n );
+        } 
+    }, compositionArray[box_n].duration );
+    singlePlaybackTimeouts.push(selectedBoxTimeout);
+}
+
+function loopMeander( box_n ){
+    sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y);
+    sendMeander(compositionArray[box_n-1].x, compositionArray[box_n-1].y, 
+        compositionArray[box_n+1].x, compositionArray[box_n+1].y, 
+        compositionArray[box_n].duration / 1000);
+    var selectedBoxTimeout = setTimeout(function() {
+        if ( SELECTED_ELEMENT != null ){
+            loopMeander( box_n );
+        } 
+    }, compositionArray[box_n].duration );
+    singlePlaybackTimeouts.push(selectedBoxTimeout);
+}
+
+function playBox( box_n ){
+    if ( compositionArray[box_n] instanceof Box ){
+        sendBox( compositionArray[box_n].x, compositionArray[box_n].y )
+    } else if ( box_n != 0 && compositionArray[box_n] instanceof Crossfade ) {
+        // check if before and after there are boxes
+        if (compositionArray[box_n-1] instanceof Box && compositionArray[box_n+1] instanceof Box){
+            if ( !ISPLAYBACKON ){
+                // loop the crossfade
+                loopCrossfade( box_n );
+                /*sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y);
+                sendCrossfade(compositionArray[box_n-1].x, compositionArray[box_n-1].y, 
+                    compositionArray[box_n+1].x, compositionArray[box_n+1].y, 
+                    compositionArray[box_n].duration / 1000);
+                var selectedBoxTimeout = setTimeout(function() {
+                    if ( SELECTED_ELEMENT != null ){
+                        sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y);
+                        sendCrossfade(compositionArray[box_n-1].x, compositionArray[box_n-1].y, 
+                            compositionArray[box_n+1].x, compositionArray[box_n+1].y, 
+                            compositionArray[box_n].duration / 1000);
+                        }
+                    }, compositionArray[box_n].duration );*/
+
+            } else {
+                // play crossfade only once
+                sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y);
+                sendCrossfade(compositionArray[box_n-1].x, compositionArray[box_n-1].y, 
+                    compositionArray[box_n+1].x, compositionArray[box_n+1].y, 
+                    compositionArray[box_n].duration / 1000);    
+            }    
+        }
+
+    } else if ( box_n != 0 && compositionArray[box_n] instanceof Meander ) {
+        // check if before and after there are boxes
+        if (compositionArray[box_n-1] instanceof Box && compositionArray[box_n+1] instanceof Box){
+            if ( !ISPLAYBACKON ){
+                // loop the meander
+                loopMeander( box_n );
+
+            } else {
+                // play meander only once
+                sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y);
+                sendMeander(compositionArray[box_n-1].x, compositionArray[box_n-1].y, 
+                    compositionArray[box_n+1].x, compositionArray[box_n+1].y, 
+                    compositionArray[box_n].duration / 1000);    
+            }    
+        }
+
+    }
+    
 }
 
 function highlightAll (){    
@@ -551,7 +641,7 @@ function removeElement(element_index){
     compositionArray.splice(element_index, 1);
     // remove raphael item from canvas array
     raphaels.splice(element_index, 1);
-    console.log(compositionArray);
+    console.log("composition: ", compositionArray);
 }
 
 // PLAY BUTTON
@@ -580,6 +670,7 @@ var play = function(){
                 console.log('playing: ',compositionArray[i]);
                 SELECTED_ELEMENT = i;
                 highlightBox(i);
+                playBox(i);
                 //sendBox(compositionArray[i].x, compositionArray[i].y);
                 //highlightBoxElement(document.getElementById('box '+i)); 
             }
@@ -628,6 +719,9 @@ var stopPlayback = function(){
     for (var i = 0; i < QUEUED_TIMEOUTS.length; i++) {
         clearTimeout(QUEUED_TIMEOUTS[i]);
     }
+    for (var i = 0; i < singlePlaybackTimeouts.length; i++) {
+        clearTimeout(singlePlaybackTimeouts[i]);
+    }
     //sendStop();
     ISPLAYBACKON = false;
     highlightNone();
@@ -636,6 +730,7 @@ var stopPlayback = function(){
     //    all_click_on_box[i].classList.remove('click-on-box');
     //}
     enableAllInteractions();
+    sendStop();
 }
 function enableAllInteractions(){
     document.getElementById("insert-crossfade").disabled = false;
@@ -674,6 +769,7 @@ var upListener = function(){
                 // disable listening to previous point
                 SELECTED_ELEMENT = null;
                 highlightNone(); 
+                sendStop();
             } else {
                 // you can select a new point when there is no selected point already
                 canClick = true;

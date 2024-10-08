@@ -205,6 +205,7 @@ class PickHelper {
                 //material.needsUpdate = true*/
             }
             //console.log("picked ID: "+intersectedObjects[0].index);
+            sendBox(x[this.pickedObjectIndex], y[this.pickedObjectIndex]);
         }
     }
     click(normalizedPosition, scene, camera, time) {
