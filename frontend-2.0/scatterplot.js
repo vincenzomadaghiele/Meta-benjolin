@@ -145,7 +145,7 @@ function render() {
     }
     // PICKED INDEX DISAPPEARS WHEN OUT OF SCATTERPLOT
     if ( !MOUSEONSCATTERPLOT ){
-        pointToBasic(CURRENTPICKEDINDEX)
+        pointToBasic(CURRENTPICKEDINDEX);
         CURRENTPICKEDINDEX = null;
     }
     renderer.render( scene, camera );
@@ -167,7 +167,13 @@ class PickHelper {
     }
     pick(normalizedPosition, scene, camera, time) {
         // restore the color if there is a picked object
-        if (this.pickedObject) {
+        if ( !clickedIndices.includes(CURRENTPICKEDINDEX) ) {
+            pointToBasic(CURRENTPICKEDINDEX);
+            this.pickedObject = undefined;
+            this.pickedObjectIndex = undefined;
+        }
+        
+        /*if (this.pickedObject) {
             if ( !clickedIndices.includes(this.pickedObjectIndex) ) {
                 particles.geometry.attributes.size.array[ this.pickedObjectIndex ] = PARTICLE_SIZE;
                 particles.geometry.attributes.opacity.array[ this.clickedObjectIndex ] = BASE_OPACITY;
@@ -179,12 +185,12 @@ class PickHelper {
             }
             this.pickedObject = undefined;
             this.pickedObjectIndex = undefined;
-            CURRENTPICKEDINDEX = this.pickedObjectIndex;
-        }
+        }*/
         // cast a ray through the frustum
         this.raycaster.setFromCamera(normalizedPosition, camera);
         // get the list of objects the ray intersected
         const intersectedObjects = this.raycaster.intersectObjects(scene.children);
+
         if (intersectedObjects.length) {
             // pick the first object. It's the closest one
             this.pickedObject = intersectedObjects[0].object;
@@ -202,11 +208,14 @@ class PickHelper {
                 particles.geometry.attributes.customColor.array[ this.pickedObjectIndex * 3 + 1 ] = newcolor.g;
                 particles.geometry.attributes.customColor.array[ this.pickedObjectIndex * 3 + 2 ] = newcolor.b;
                 particles.geometry.attributes.customColor.needsUpdate = true;
-                //material.needsUpdate = true*/
+                //material.needsUpdate = true
             }
             //console.log("picked ID: "+intersectedObjects[0].index);
             sendBox(x[this.pickedObjectIndex], y[this.pickedObjectIndex]);
+        } else {
+            sendStop();
         }
+        CURRENTPICKEDINDEX = this.pickedObjectIndex;
     }
     click(normalizedPosition, scene, camera, time) {
         // restore the color if there is a picked object
@@ -219,7 +228,7 @@ class PickHelper {
         // get the list of objects the ray intersected
         const intersectedObjects = this.raycaster.intersectObjects(scene.children);
         if (intersectedObjects.length) {
-            if (intersectedObjects[0].index != this.clickedObjectIndex){
+            if ( intersectedObjects[0].index != this.clickedObjectIndex ){
                 let compositionTime = calculateCurrentCompostionTime();
                 if ( compositionTime < MAX_COMPOSITION_DURATION){
                     
@@ -235,21 +244,38 @@ class PickHelper {
                     particles.geometry.attributes.opacity.needsUpdate = true;
                     // update color
                     let newcolor = new THREE.Color();
-                    newcolor.setRGB( Math.random(), Math.random(), Math.random() );
+                    let newHueValue = Math.random();
+                    let newRGBvalues = colorHsbToRgb( newHueValue*360, 0.9*100, 0.9*100 );
+                    newcolor.setRGB( newRGBvalues[0]/255, newRGBvalues[1]/255, newRGBvalues[2]/255 );
                     particles.geometry.attributes.customColor.array[ this.clickedObjectIndex * 3 ] = newcolor.r;
                     particles.geometry.attributes.customColor.array[ this.clickedObjectIndex * 3 + 1 ] = newcolor.g;
                     particles.geometry.attributes.customColor.array[ this.clickedObjectIndex * 3 + 2 ] = newcolor.b;
                     particles.geometry.attributes.customColor.needsUpdate = true;
-                    material.needsUpdate = true
+                    material.needsUpdate = true;
                     console.log("clicked ID: "+intersectedObjects[0].index);
 
                     drawBox(x[ this.clickedObjectIndex ], y[ this.clickedObjectIndex ], z[ this.clickedObjectIndex ], 
-                        Math.random(), this.clickedObjectIndex); 
+                        newHueValue, this.clickedObjectIndex); 
                 }
             }
         }
     }
 }
+
+var changePointSize = function ( box_n, size ){
+    particles.geometry.attributes.size.array[ compositionArray[box_n].arrayIndex ] = PARTICLE_SIZE * size * heightToPointSize;
+    particles.geometry.attributes.size.needsUpdate = true;
+
+}
+
+const colorHsbToRgb = (h, s, b) => {
+    s /= 100;
+    b /= 100;
+    const k = (n) => (n + h / 60) % 6;
+    const f = (n) => b * (1 - s * Math.max(0, Math.min(k(n), 4 - k(n), 1)));
+    return [255 * f(5), 255 * f(3), 255 * f(1)];
+};
+
 
 const pickPosition = {x: 0, y: 0}; // pick position in 2D space
 clearPickPosition();

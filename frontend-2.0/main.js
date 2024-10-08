@@ -67,7 +67,7 @@ function pxHeightToTimesMs (height_px) {
 }
 
 // COMPOSITION FUNCTIONALITIES
-class Box{
+/*class Box{
     constructor(x, y, z, duration, arrayIndex){
         this.x = x;
         this.y = y;
@@ -87,8 +87,9 @@ class Crossfade{
     }
 }
 
+const compositionArray = [];*/
+
 let numBoxes = 0;
-const compositionArray = [];
 function calculateCurrentCompostionTime(){
     let compositionTime = 0;
     for (let i = 0; i < compositionArray.length; i++) {
@@ -192,6 +193,9 @@ var move = function (dx, dy) {
             this.raph.setSize(COMPOSITION_BAR_WIDTH_PX, newr*2+MARGIN_PX);
             this.attr({cy: (newr*2+MARGIN_PX)/2});
             this.sized.attr({cy: (newr*2+MARGIN_PX)/2});
+            //resize marker on scatterplot
+            let item_index = Number(this.parentDiv.id.split(" ")[1]);
+            //changePointSize(item_index, newr*2);
         }
     }
 };
@@ -700,6 +704,9 @@ function disableAllInteractions(){
     for (var i = 0; i < numBoxes; i++) {
         let thisbox = document.getElementById("box "+i);
         thisbox.draggable = false;
+    }
+    for (var i = 0; i < singlePlaybackTimeouts.length; i++) {
+        clearTimeout(singlePlaybackTimeouts[i]);
     }
 }
 
