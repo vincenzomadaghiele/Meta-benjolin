@@ -41,7 +41,7 @@ class LatentSpace {
 
   getIndexGivenLatent(latent) {
     const [distance, index] = this.kdtree.nearestNeighbor(latent);
-    return index;
+    return index; 
   }
 
   // Pre-uniformization function (implementation might differ based on libraries)
