@@ -43,7 +43,7 @@ let QUEUED_TIMEOUTS = []; // all timeouts queued for playback
 const BASIC_ELEMENT_T = 5000 // new element when created has duration 5s
 const MAX_T = 10000 // max element duration is 20s
 const MIN_T = 1000 // min element duration is 1s
-const MAX_COMPOSITION_DURATION = 120000 // 12000 milliseconds = 2 minutes
+const MAX_COMPOSITION_DURATION = 60000 // 12000 milliseconds = 2 minutes
 
 function timesToPxHeight (time_ms) {
     // adaptively calculate element height in pixel corresponding to time in milliseconds
@@ -52,7 +52,7 @@ function timesToPxHeight (time_ms) {
     //let conversion_factor = window.innerHeight / MAX_COMPOSITION_DURATION;
     
     // dependent on set size
-    let conversion_factor = COMPOSITION_BAR_HEIGHT_PX / MAX_COMPOSITION_DURATION;
+    let conversion_factor = COMPOSITION_BAR_HEIGHT_PX / MAX_COMPOSITION_DURATION / 2;
     let height_px = time_ms * conversion_factor;
     return height_px
 }
@@ -62,7 +62,7 @@ function pxHeightToTimesMs (height_px) {
     // dependent on window height
     //let time_ms = height_px * MAX_COMPOSITION_DURATION / window.innerHeight;
     // dependent on set size
-    let time_ms = height_px * MAX_COMPOSITION_DURATION / COMPOSITION_BAR_HEIGHT_PX;
+    let time_ms = height_px * MAX_COMPOSITION_DURATION / COMPOSITION_BAR_HEIGHT_PX * 2;
     return time_ms
 }
 
@@ -475,7 +475,7 @@ function highlightNone (){
         particles.geometry.attributes.opacity.array = newopacities;
         particles.geometry.attributes.opacity.needsUpdate = true;    
     } else {
-        var newopacities = new Float32Array( N_POINTS ).fill(0.9);
+        var newopacities = new Float32Array( N_POINTS ).fill(BASE_OPACITY);
         particles.geometry.attributes.opacity.array = newopacities;
         particles.geometry.attributes.opacity.needsUpdate = true;    
     }
@@ -494,7 +494,7 @@ function highlightBox (box_n){
     {
         el.attr({"opacity": HOVER_OPACITY});
     });
-    newopacities[compositionArray[box_n].arrayIndex] = 0.9;
+    newopacities[compositionArray[box_n].arrayIndex] = SELECTED_OPACITY;
     if ( SELECTED_ELEMENT != null ){
         raphaels[SELECTED_ELEMENT].forEach(function (el) 
         {
@@ -588,9 +588,7 @@ function playBox( box_n ){
                     compositionArray[box_n].duration / 1000);    
             }    
         }
-
     }
-    
 }
 
 
@@ -1041,7 +1039,6 @@ const scale_y = 200;
 const scale_z = 300;
 
 const BASE_OPACITY = 0.7;
-
 
 // DATA
 const x = new Float32Array(dataset3D['x']); //.slice(0, 100);
