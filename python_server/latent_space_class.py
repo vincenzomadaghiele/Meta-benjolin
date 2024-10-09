@@ -151,7 +151,7 @@ class LatentSpace():
 
     def play_meander_handler(self, address: str, *args):
         print(f'received msg: {address}, playing meander coords {args[0]:.3f}, {args[1]:.3f}, {args[2]:.3f} --> {args[3]:.3f}, {args[3]:.3f}, {args[5]:.3f} in {args[6]:.2f} s')
-        x1, y1, z1, x2, y2, z2, t = args[0], args[1], args[2], args[3], args[4], args[5], int(args[4])
+        x1, y1, z1, x2, y2, z2, t = args[0], args[1], args[2], args[3], args[4], args[5], int(args[6])
         path_of_indices = self.get_meander(x1, y1, z1, x2, y2, z2)
         length = path_of_indices.shape[0]
         time_per_point = t / length
@@ -175,10 +175,10 @@ class LatentSpace():
             time.sleep(time_per_point)
 
     def play_crossfade_handler(self, address: str, *args):
-        print(f'received msg: {address}, playing crossfade coords {args[0]:.3f}, {args[1]:.3f} {args[2]:.3f} --> {args[3]:.3f}, {args[4]:.3f}, {args[5]:.3f} in {args[5]:.2f} s')
-        x1, y1, x2, y2, t = args[0], args[1], args[2], args[3], int(args[4])
-        idx1 = self.get_index_given_latent([x1, y1])
-        idx2 = self.get_index_given_latent([x2, y2])
+        print(f'received msg: {address}, playing crossfade coords {args[0]:.3f}, {args[1]:.3f} {args[2]:.3f} --> {args[3]:.3f}, {args[4]:.3f}, {args[5]:.3f} in {args[6]:.2f} s')
+        x1, y1, z1, x2, y2, z2, t = args[0], args[1], args[2], args[3], args[4], args[5], int(args[6])
+        idx1 = self.get_index_given_latent([x1, y1, z1])
+        idx2 = self.get_index_given_latent([x2, y2, z2])
         _, params1 = self.get_point_info(index=idx1)
         _, params2 = self.get_point_info(index=idx2)
         time_per_point = 0.1

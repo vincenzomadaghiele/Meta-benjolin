@@ -531,9 +531,9 @@ function highlightAll (){
 
 const singlePlaybackTimeouts = [];
 function loopCrossfade( box_n ){
-    sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y);
-    sendCrossfade(compositionArray[box_n-1].x, compositionArray[box_n-1].y, 
-        compositionArray[box_n+1].x, compositionArray[box_n+1].y, 
+    sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z);
+    sendCrossfade(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z, 
+        compositionArray[box_n+1].x, compositionArray[box_n+1].y, compositionArray[box_n+1].z, 
         compositionArray[box_n].duration / 1000);
     var selectedBoxTimeout = setTimeout(function() {
         if ( SELECTED_ELEMENT != null ){
@@ -544,9 +544,9 @@ function loopCrossfade( box_n ){
 }
 
 function loopMeander( box_n ){
-    sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y);
-    sendMeander(compositionArray[box_n-1].x, compositionArray[box_n-1].y, 
-        compositionArray[box_n+1].x, compositionArray[box_n+1].y, 
+    sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z);
+    sendMeander(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z, 
+        compositionArray[box_n+1].x, compositionArray[box_n+1].y, compositionArray[box_n+1].z, 
         compositionArray[box_n].duration / 1000);
     var selectedBoxTimeout = setTimeout(function() {
         if ( SELECTED_ELEMENT != null ){
@@ -558,7 +558,7 @@ function loopMeander( box_n ){
 
 function playBox( box_n ){
     if ( compositionArray[box_n] instanceof Box ){
-        sendBox( compositionArray[box_n].x, compositionArray[box_n].y )
+        sendBox( compositionArray[box_n].x, compositionArray[box_n].y, compositionArray[box_n].z )
     } else if ( box_n != 0 && compositionArray[box_n] instanceof Crossfade ) {
         // check if before and after there are boxes
         if (compositionArray[box_n-1] instanceof Box && compositionArray[box_n+1] instanceof Box){
@@ -567,9 +567,9 @@ function playBox( box_n ){
                 loopCrossfade( box_n );
             } else {
                 // play crossfade only once
-                sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y);
-                sendCrossfade(compositionArray[box_n-1].x, compositionArray[box_n-1].y, 
-                    compositionArray[box_n+1].x, compositionArray[box_n+1].y, 
+                sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z);
+                sendCrossfade(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z, 
+                    compositionArray[box_n+1].x, compositionArray[box_n+1].y, compositionArray[box_n+1].z, 
                     compositionArray[box_n].duration / 1000);    
             }    
         }
@@ -582,9 +582,9 @@ function playBox( box_n ){
                 loopMeander( box_n );
             } else {
                 // play meander only once
-                sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y);
-                sendMeander(compositionArray[box_n-1].x, compositionArray[box_n-1].y, 
-                    compositionArray[box_n+1].x, compositionArray[box_n+1].y, 
+                sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z);
+                sendMeander(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z, 
+                    compositionArray[box_n+1].x, compositionArray[box_n+1].y, compositionArray[box_n+1].z, 
                     compositionArray[box_n].duration / 1000);    
             }    
         }
@@ -1241,7 +1241,7 @@ class PickHelper {
                 //material.needsUpdate = true
             }
             //console.log("picked ID: "+intersectedObjects[0].index);
-            sendBox(x[this.pickedObjectIndex], y[this.pickedObjectIndex]);
+            sendBox(x[this.pickedObjectIndex], y[this.pickedObjectIndex], z[this.pickedObjectIndex]);
         } else {
             sendStop();
         }
