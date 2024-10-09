@@ -175,7 +175,7 @@ class LatentSpace():
             time.sleep(time_per_point)
 
     def play_crossfade_handler(self, address: str, *args):
-        print(f'received msg: {address}, playing crossfade coords {args[0]:.3f}, {args[1]:.3f} --> {args[2]:.3f}, {args[3]:.3f} in {args[4]:.2f} s')
+        print(f'received msg: {address}, playing crossfade coords {args[0]:.3f}, {args[1]:.3f} {args[2]:.3f} --> {args[3]:.3f}, {args[4]:.3f}, {args[5]:.3f} in {args[5]:.2f} s')
         x1, y1, x2, y2, t = args[0], args[1], args[2], args[3], int(args[4])
         idx1 = self.get_index_given_latent([x1, y1])
         idx2 = self.get_index_given_latent([x2, y2])
@@ -216,13 +216,13 @@ class LatentSpace():
 
         # this could also work but takes up more network where we send each point's 
         # xyz-coordinates like "x0-y0-z0-x1-y1-z1-x2-y2-z2..." etc
-        path_message = ""
-        for point_coords in path_of_latents:
-            path_message += '-'.join([str(int(coord)) for coord in point_coords])
+        # path_message = ""
+        # for point_coords in path_of_latents:
+            # path_message += '-'.join([str(int(coord)) for coord in point_coords])
 
         # the code below is the old one
-        """path_of_latents = self.parameter[path_of_indices, :]
-        path_of_indices_message = '-'.join([str(int(param)) for param in path_of_indices])"""
+        # path_of_latents = self.parameter[path_of_indices, :]
+        # path_of_indices_message = '-'.join([str(int(param)) for param in path_of_indices])
 
         self.clientJS.send_message("/meanderPath", path_message)
 
