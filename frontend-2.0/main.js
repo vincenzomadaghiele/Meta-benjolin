@@ -470,10 +470,20 @@ function highlightNone (){
         {
             el.attr({"opacity": SELECTED_OPACITY});
         });
+        var newopacities = new Float32Array( N_POINTS ).fill(0.2);
+        newopacities[compositionArray[SELECTED_ELEMENT].arrayIndex] = 1;
+        particles.geometry.attributes.opacity.array = newopacities;
+        particles.geometry.attributes.opacity.needsUpdate = true;    
+    } else {
+        var newopacities = new Float32Array( N_POINTS ).fill(0.9);
+        particles.geometry.attributes.opacity.array = newopacities;
+        particles.geometry.attributes.opacity.needsUpdate = true;    
     }
 }
 
 function highlightBox (box_n){
+    var newopacities = new Float32Array( N_POINTS ).fill(0.2);
+    
     for (var i = 0; i < raphaels.length; i++) {
         raphaels[i].forEach(function (el) 
         {
@@ -484,13 +494,40 @@ function highlightBox (box_n){
     {
         el.attr({"opacity": HOVER_OPACITY});
     });
+    newopacities[compositionArray[box_n].arrayIndex] = 0.9;
     if ( SELECTED_ELEMENT != null ){
         raphaels[SELECTED_ELEMENT].forEach(function (el) 
         {
             el.attr({"opacity": SELECTED_OPACITY});
         });
+
+        // highlight dot in the scatterplot
+        //var newopacities = new Float32Array( N_POINTS ).fill(0.3);
+        //var compositionIndex = Number(element.id.split(' ')[1]);
+        newopacities[compositionArray[SELECTED_ELEMENT].arrayIndex] = 1;
     }
+    particles.geometry.attributes.opacity.array = newopacities;
+    particles.geometry.attributes.opacity.needsUpdate = true;
+
 }
+
+function highlightAll (){    
+    for (var i = 0; i < raphaels.length; i++) {
+        raphaels[i].forEach(function (el) 
+        {
+            el.attr({"opacity": HOVER_OPACITY});
+        });
+    }
+    var newopacities = new Float32Array( N_POINTS ).fill(0.2);
+    for (var i = 0; i < compositionArray.length; i++) {
+        if ( compositionArray[i] instanceof Box ){
+            newopacities[compositionArray[i].arrayIndex] = 1;
+        }
+    }
+    particles.geometry.attributes.opacity.array = newopacities;
+    particles.geometry.attributes.opacity.needsUpdate = true;
+}
+
 
 const singlePlaybackTimeouts = [];
 function loopCrossfade( box_n ){
@@ -554,15 +591,6 @@ function playBox( box_n ){
 
     }
     
-}
-
-function highlightAll (){    
-    for (var i = 0; i < raphaels.length; i++) {
-        raphaels[i].forEach(function (el) 
-        {
-            el.attr({"opacity": HOVER_OPACITY});
-        });
-    }
 }
 
 
@@ -641,6 +669,8 @@ function removeElement(element_index){
     raphaels.splice(element_index, 1);
     console.log("composition: ", compositionArray);
     // update visualization
+    renderPath();
+
 }
 
 // PLAY BUTTON
@@ -948,6 +978,7 @@ function dragLeave(e) {
         //new_draggable_node.id = 'box ' + (index_target);
 
     }
+    renderPath();
     // update scatterplot representation
 }
 
@@ -1365,9 +1396,9 @@ linecolor.r = linecolor.g = linecolor.b = 0.9;
 let arrowsIDs = []
 // RENDER PATH
 function renderPath(){
-    arrowsIDs = [];
     // remove all previous lines
     for (let i = 0; i < arrowsIDs.length; i++) {
+        console.log(arrowsIDs[i])
         var selectedObject = scene.getObjectByName(arrowsIDs[i]);
         scene.remove( selectedObject );
     }
@@ -1418,7 +1449,7 @@ function renderPath(){
                     let line = new THREE.Line( linegeometry, linematerial );
                     line.computeLineDistances();
                     //let line = customArrow(x1,y1,z1,x2,y2,z2, 10, 0x0000ff);
-                    let line_name = "crossfade "+compositionArray[i-1].arrayIndex+' '+compositionArray[i+1].arrayIndex;
+                    let line_name = "meander "+compositionArray[i-1].arrayIndex+' '+compositionArray[i+1].arrayIndex;
                     line.name = line_name;
                     arrowsIDs.push(line_name);
                     scene.add( line );
