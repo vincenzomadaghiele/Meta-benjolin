@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import Stats from 'three/addons/libs/stats.module.js';
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@5/+esm";
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import calculateCurrentCompostionTime from './main.js';
 
 // VISUALIZATION PROPERTIES
 const scale_x = 100;
@@ -262,11 +263,12 @@ class PickHelper {
     }
 }
 
-var changePointSize = function ( box_n, size ){
+export default function changePointSize ( box_n, size ){
     particles.geometry.attributes.size.array[ compositionArray[box_n].arrayIndex ] = PARTICLE_SIZE * size * heightToPointSize;
     particles.geometry.attributes.size.needsUpdate = true;
-
 }
+
+
 
 const colorHsbToRgb = (h, s, b) => {
     s /= 100;
