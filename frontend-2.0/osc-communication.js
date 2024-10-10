@@ -149,3 +149,17 @@ var sendStop = function (){
         args: []
     });
 }
+
+var sendStartrecording = function (){
+    port.send({
+        address: "/startrecording",
+        args: []
+    });
+}
+
+var sendStoprecording = function (){
+    port.send({
+        address: "/stoprecording",
+        args: []
+    });
+}

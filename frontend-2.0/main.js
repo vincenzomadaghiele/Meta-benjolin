@@ -818,11 +818,13 @@ var stopPlayback = function(){
     //sendStop();
     SELECTED_ELEMENT = null;
     ISPLAYBACKON = false;
+    if ( ISRECORDING ){
+        console.log('Stopping recording, file saved to disk');
+        sendStoprecording();
+        ISRECORDING = false;
+        clearTimeout(stoprecordingtimeout);
+    }
     highlightNone();
-    //var all_click_on_box = document.getElementsByClassName('click-on-box');
-    //for (var i = 0; i < all_click_on_box.length; i++) {
-    //    all_click_on_box[i].classList.remove('click-on-box');
-    //}
     enableAllInteractions();
     sendStop();
 }
@@ -837,6 +839,29 @@ function enableAllInteractions(){
     }
 }
 
+// RECORD BUTTON
+let ISRECORDING = false;
+let stoprecordingtimeout = undefined;
+document.getElementById("record").addEventListener("mouseover", (event) => {
+    highlightNone(); 
+    event.target.style["cursor"] = "pointer";
+}); 
+document.getElementById("record").addEventListener("click", (event) => {
+    highlightNone(); 
+    SELECTED_ELEMENT = null;
+    console.log('Starting recording');
+    sendStartrecording();
+    play();
+    ISRECORDING = true;
+    let maxrecordingduration = calculateCurrentCompostionTime();
+    stoprecordingtimeout = setTimeout(function() {
+        if( ISRECORDING ){
+            console.log('Stopping recording, file saved to disk');
+            sendStoprecording();
+            ISRECORDING = false;
+        }
+    }, maxrecordingduration+100);
+}); 
 
 
 
@@ -1581,7 +1606,6 @@ port.on("message", function (oscMessage) {
             if ( compositionArray[i] instanceof Meander ){
                 if (internalMeanderCount == numMeanders ){
                     compositionArray[i].meanderComponents = MEANDERS_LIST[internalMeanderCount];
-                    console.log('internalMeanderCount', internalMeanderCount)
                 }
                 internalMeanderCount += 1;
             }
@@ -1670,7 +1694,7 @@ function animateCrossfade( x1,y1,z1, x2,y2,z2, crossfade_time ){
             cursor.position.x += space_interval_x;
             cursor.position.y += space_interval_y;
             cursor.position.z += space_interval_z;
-            //console.log(cursor_x, cursor_y, cursor_z);
+
         }, meandercursortime );
         meandercursortime += time_interval;
         crossfadePlaybackTimeouts.push(crossfadeCursorTimeout);

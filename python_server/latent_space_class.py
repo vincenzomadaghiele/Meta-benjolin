@@ -31,6 +31,11 @@ class LatentSpace():
     def stop_benjo(self):
         self.clientPd.send_message("/stop", 0)
 
+    def start_recording(self):
+        self.clientPd.send_message("/startrecording", 0)
+    def stop_recording(self):
+        self.clientPd.send_message("/stoprecording", 0)
+
     def get_current_index(self):
         return self.current_index
     
@@ -235,6 +240,18 @@ class LatentSpace():
         self.is_playing_crossfade = False
         self.is_playing_meander = False
 
+    def startrecording_handler(self, address: str):
+        print(f'received msg: {address}')
+        self.start_recording()
+        self.is_playing_crossfade = False
+        self.is_playing_meander = False
+
+    def stoprecording_handler(self, address: str):
+        print(f'received msg: {address}')
+        self.stop_recording()
+        self.is_playing_crossfade = False
+        self.is_playing_meander = False
+
 
 def default_handler(message):
     print(f"Unrecognised message: {message}")
@@ -265,6 +282,8 @@ if __name__ == "__main__":
     dispatcher.map("/play/crossfade", handler=cloud.play_crossfade_handler)
     dispatcher.map("/draw/meander", handler=cloud.drawMeander_handler)
     dispatcher.map("/stop", handler=cloud.stop_handler)
+    dispatcher.map("/startrecording", handler=cloud.startrecording_handler)
+    dispatcher.map("/stoprecording", handler=cloud.stoprecording_handler)
     dispatcher.set_default_handler(default_handler)
     print("Set up complete! Start playing the benjolin!")
     server.serve_forever()  # Blocks forever
