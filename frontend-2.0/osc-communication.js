@@ -2,14 +2,18 @@ var port = new osc.WebSocketPort({
     url: "ws://localhost:8081"
 });
 
+/*
 let MEANDERS_LIST = [];
+let newMeanderIndices = undefined;
 port.on("message", function (oscMessage) {
     $("#message").text(JSON.stringify(oscMessage, undefined, 2));
     MEANDERS_LIST.push(oscMessage.args[0].split("-"));
-    //console.log(meanders)
+    newMeanderIndices = oscMessage.args[0].split("-");
+    //console.log(newMeanderIndices);
     //console.log("message", oscMessage.args[0].split("-"));
     //console.log("message", oscMessage[0].split("-"));
 });
+*/
 
 port.open();
 

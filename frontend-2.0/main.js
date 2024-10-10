@@ -150,7 +150,7 @@ function drawBox(boxx, boxy, boxz, colorHue, arrayIndex){
                 }            
                 let item_index = Number(newBox.id.split(" ")[1])
                 SELECTED_ELEMENT = item_index;
-                highlightBox( item_index ); 
+                //highlightBox( item_index ); 
                 playBox( item_index );
             }
         }); 
@@ -262,7 +262,7 @@ function drawCrossfade(){
                 }            
                 let item_index = Number(newBox.id.split(" ")[1])
                 SELECTED_ELEMENT = item_index;
-                highlightBox(item_index); 
+                //highlightBox(item_index); 
                 playBox( SELECTED_ELEMENT );
             }
         });
@@ -387,7 +387,7 @@ function drawMeander(){
                 }            
                 let item_index = Number(newBox.id.split(" ")[1])
                 SELECTED_ELEMENT = item_index;
-                highlightBox(item_index); 
+                //highlightBox(item_index); 
                 playBox( SELECTED_ELEMENT );
             }
         }); 
@@ -558,10 +558,12 @@ function loopMeander( box_n ){
 
 function playBox( box_n ){
     if ( compositionArray[box_n] instanceof Box ){
+        highlightBox( box_n );
         sendBox( compositionArray[box_n].x, compositionArray[box_n].y, compositionArray[box_n].z )
     } else if ( box_n != 0 && compositionArray[box_n] instanceof Crossfade ) {
         // check if before and after there are boxes
         if (compositionArray[box_n-1] instanceof Box && compositionArray[box_n+1] instanceof Box){
+            highlightBox( box_n );
             if ( !ISPLAYBACKON ){
                 // loop the crossfade
                 loopCrossfade( box_n );
@@ -572,11 +574,14 @@ function playBox( box_n ){
                     compositionArray[box_n+1].x, compositionArray[box_n+1].y, compositionArray[box_n+1].z, 
                     compositionArray[box_n].duration / 1000);    
             }    
+        } else {
+            console.log('Crossfade can only by played if it is placed between two circles');
         }
 
     } else if ( box_n != 0 && compositionArray[box_n] instanceof Meander ) {
         // check if before and after there are boxes
         if (compositionArray[box_n-1] instanceof Box && compositionArray[box_n+1] instanceof Box){
+            highlightBox( box_n );
             if ( !ISPLAYBACKON ){
                 // loop the meander
                 loopMeander( box_n );
@@ -587,6 +592,8 @@ function playBox( box_n ){
                     compositionArray[box_n+1].x, compositionArray[box_n+1].y, compositionArray[box_n+1].z, 
                     compositionArray[box_n].duration / 1000);    
             }    
+        } else {
+            console.log('Meander can only by played if it placed is between two circles');
         }
     }
 }
@@ -709,11 +716,7 @@ var play = function(){
     let newtimeout = setTimeout(function() {
         if( ISPLAYBACKON ){
             console.log('End of composition');
-            SELECTED_ELEMENT = null;
-            ISPLAYBACKON = false;
-            //sendStop();
-            enableAllInteractions();
-            highlightNone();
+            stopPlayback();
         }
     }, timeout+100);
     QUEUED_TIMEOUTS.push(newtimeout);
@@ -753,6 +756,7 @@ var stopPlayback = function(){
         clearTimeout(singlePlaybackTimeouts[i]);
     }
     //sendStop();
+    SELECTED_ELEMENT = null;
     ISPLAYBACKON = false;
     highlightNone();
     //var all_click_on_box = document.getElementsByClassName('click-on-box');
@@ -1037,6 +1041,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 const scale_x = 100;
 const scale_y = 200;
 const scale_z = 300;
+const CAMERA_POSITION = 1500;
 
 const BASE_OPACITY = 0.7;
 
@@ -1063,7 +1068,7 @@ function init() {
 
     // CAMERA
     camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight , 1, 10000 );
-    camera.position.z = 1500;
+    camera.position.z = CAMERA_POSITION;
 
     // RENDERER
     renderer = new THREE.WebGLRenderer();
@@ -1432,12 +1437,16 @@ function renderPath(){
                 if (compositionArray[i-1] instanceof Box && compositionArray[i+1] instanceof Box){
 
                     let linepoints = [];
-                    let x1 = compositionArray[i-1].x * scale_x - (scale_x/2),
-                        y1 = compositionArray[i-1].y * scale_y - (scale_y/2),
-                        z1 = compositionArray[i-1].z * scale_z - (scale_z/2);
-                    let x2 = compositionArray[i+1].x * scale_x - (scale_x/2),
-                        y2 = compositionArray[i+1].y * scale_y - (scale_y/2),
-                        z2 = compositionArray[i+1].z * scale_z - (scale_z/2);
+                    let x1 = compositionArray[i-1].x, //* scale_x - (scale_x/2),
+                        y1 = compositionArray[i-1].y, //* scale_y - (scale_y/2),
+                        z1 = compositionArray[i-1].z; //* scale_z - (scale_z/2);
+                    let x2 = compositionArray[i+1].x, //* scale_x - (scale_x/2),
+                        y2 = compositionArray[i+1].y, //* scale_y - (scale_y/2),
+                        z2 = compositionArray[i+1].z; // * scale_z - (scale_z/2);
+
+                    sendDrawMeander(x1, y1, z1, x2, y2, z2);
+                    
+                    /*
                     linepoints.push( new THREE.Vector3( x1,y1,z1 )); 
                     linepoints.push( new THREE.Vector3( x2,y2,z2 )); 
 
@@ -1450,6 +1459,7 @@ function renderPath(){
                     line.name = line_name;
                     arrowsIDs.push(line_name);
                     scene.add( line );
+                    */
 
                 }
             } 
@@ -1493,3 +1503,45 @@ function renderPath(){
         }
     }
 }
+
+//let MEANDERS_LIST = [];
+let newMeanderIndices = undefined;
+port.on("message", function (oscMessage) {
+    $("#message").text(JSON.stringify(oscMessage, undefined, 2));
+    //MEANDERS_LIST.push(oscMessage.args[0].split(" "));
+    newMeanderIndices = oscMessage.args[0].split(" ");
+    var newMeanderIndices_filtered = newMeanderIndices.filter(function (el) {
+        return el != "";
+      });
+    //console.log(newMeanderIndices_filtered);
+
+    if ( newMeanderIndices_filtered ){
+        for ( let i = 3; i < newMeanderIndices_filtered.length; i+=3 ) {
+            
+            //let preavious_meanderidx = Number(newMeanderIndices_filtered[i-1]);
+            //let meanderidx = Number(newMeanderIndices_filtered[i]);
+            let linepoints = [];
+            let x1 = Number(newMeanderIndices_filtered[i-3]) * scale_x - (scale_x/2),
+                y1 = Number(newMeanderIndices_filtered[i-2]) * scale_y - (scale_y/2),
+                z1 = Number(newMeanderIndices_filtered[i-1]) * scale_z - (scale_z/2);
+            let x2 = Number(newMeanderIndices_filtered[i]) * scale_x - (scale_x/2),
+                y2 = Number(newMeanderIndices_filtered[i+1]) * scale_y - (scale_y/2),
+                z2 = Number(newMeanderIndices_filtered[i+2]) * scale_z - (scale_z/2);
+            linepoints.push( new THREE.Vector3( x1,y1,z1 )); 
+            linepoints.push( new THREE.Vector3( x2,y2,z2 )); 
+
+            let linegeometry = new THREE.BufferGeometry().setFromPoints( linepoints );
+            let linematerial = new THREE.LineBasicMaterial( { color: linecolor } );
+            let line = new THREE.Line( linegeometry, linematerial );
+            let line_name = "meandercomponent "+x1+y1+z1+" "+x2+y2+z2;
+            line.name = line_name;
+            arrowsIDs.push(line_name);
+            scene.add( line );
+        
+        }
+    }
+
+    //console.log("message", oscMessage.args[0].split("-"));
+    //console.log("message", oscMessage[0].split("-"));
+});
+

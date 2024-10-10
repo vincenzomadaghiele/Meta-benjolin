@@ -216,9 +216,12 @@ class LatentSpace():
 
         # this could also work but takes up more network where we send each point's 
         # xyz-coordinates like "x0-y0-z0-x1-y1-z1-x2-y2-z2..." etc
-        # path_message = ""
-        # for point_coords in path_of_latents:
-            # path_message += '-'.join([str(int(coord)) for coord in point_coords])
+        path_message = ""
+        for point_coords in path_of_latents:
+            path_message += ' '.join([str(coord) for coord in point_coords])
+            path_message += ' '
+            print(point_coords)
+        print(path_message)
 
         # the code below is the old one
         # path_of_latents = self.parameter[path_of_indices, :]
