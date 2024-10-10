@@ -899,7 +899,7 @@ let ISRECORDING = false;
 let stoprecordingtimeout = undefined;
 document.getElementById("record").addEventListener("mouseover", (event) => {
     if ( !ISPLAYBACKON ){
-        highlightNone(); 
+        highlightAll(); 
         event.target.style["cursor"] = "pointer";
         textlog.innerHTML="Record the whole composition.";
     } else {
@@ -974,7 +974,9 @@ document.getElementById("download").addEventListener("click", (event) => {
 document.getElementById("scatterPlot").addEventListener("mouseover", (event) => {
     highlightNone(); 
     if ( SELECTED_ELEMENT != null ){
-        textlog.innerHTML="An object is selected. Click anywhere to go back to exploration.";
+        if ( !ISPLAYBACKON ){
+            textlog.innerHTML="An object is selected. Click anywhere to go back to exploration.";
+        }
     }
     else {
         textlog.innerHTML="Explore the cloud to listen to the different states of the system. <br> Click on a point to add the corresponding state to the composition bar. ";
@@ -1767,30 +1769,32 @@ function setCursorPosition( cursor_x, cursor_y, cursor_z ){
 
 let meanderPlaybackTimeouts = []
 function animateMeander( meander, time ){
-    // the interval at which the meander changes position
-    let meandercursortime = 0
-    let time_interval = time / (meander.length/3);
-    let cursor_x = Number(meander[0]), //* scale_x - (scale_x/2),
-        cursor_y = Number(meander[1]), //* scale_y - (scale_y/2),
-        cursor_z = Number(meander[2]); //* scale_z - (scale_z/2);
-    cursor = createCursor( cursor_x, cursor_y, cursor_z );
-    scene.add(cursor);
+    if ( meander ){
+        // the interval at which the meander changes position
+        let meandercursortime = 0
+        let time_interval = time / (meander.length/3);
+        let cursor_x = Number(meander[0]), //* scale_x - (scale_x/2),
+            cursor_y = Number(meander[1]), //* scale_y - (scale_y/2),
+            cursor_z = Number(meander[2]); //* scale_z - (scale_z/2);
+        cursor = createCursor( cursor_x, cursor_y, cursor_z );
+        scene.add(cursor);
 
-    for ( let i = 0; i < meander.length; i+=3 ) {
+        for ( let i = 0; i < meander.length; i+=3 ) {
+            var meanderCursorTimeout = setTimeout(function() {
+                cursor_x = Number(meander[i]) * scale_x - (scale_x/2);
+                cursor_y = Number(meander[i+1]) * scale_y - (scale_y/2);
+                cursor_z = Number(meander[i+2]) * scale_z - (scale_z/2);
+                setCursorPosition( cursor_x, cursor_y, cursor_z );
+                //console.log(cursor_x, cursor_y, cursor_z);
+            }, meandercursortime );
+            meandercursortime += time_interval;
+            meanderPlaybackTimeouts.push(meanderCursorTimeout);
+        }
         var meanderCursorTimeout = setTimeout(function() {
-            cursor_x = Number(meander[i]) * scale_x - (scale_x/2);
-            cursor_y = Number(meander[i+1]) * scale_y - (scale_y/2);
-            cursor_z = Number(meander[i+2]) * scale_z - (scale_z/2);
-            setCursorPosition( cursor_x, cursor_y, cursor_z );
-            //console.log(cursor_x, cursor_y, cursor_z);
+            scene.remove(cursor);
         }, meandercursortime );
-        meandercursortime += time_interval;
         meanderPlaybackTimeouts.push(meanderCursorTimeout);
     }
-    var meanderCursorTimeout = setTimeout(function() {
-        scene.remove(cursor);
-    }, meandercursortime );
-    meanderPlaybackTimeouts.push(meanderCursorTimeout);
 }
 
 
