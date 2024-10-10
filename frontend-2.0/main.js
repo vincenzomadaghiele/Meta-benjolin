@@ -1593,9 +1593,19 @@ port.on("message", function (oscMessage) {
 
 function createCursor( cursor_x, cursor_y, cursor_z ){
 
+    let newcolor = new THREE.Color();
+    let newHueValue = 0.7;
+    let newRGBvalues = colorHsbToRgb( newHueValue*360, 0.9*100, 0.9*100 );
+    newcolor.setRGB( newRGBvalues[0]/255, newRGBvalues[1]/255, newRGBvalues[2]/255 );
+
+    const sprite = new THREE.TextureLoader().load( 'imgs/disc.png' );
+    sprite.colorSpace = THREE.SRGBColorSpace;
+
     const dotGeometry = new THREE.BufferGeometry();
     dotGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array([cursor_x, cursor_y, cursor_z]), 3));
-    const dotMaterial = new THREE.PointsMaterial({ size: 20, color: 0xfff000 });
+    //const dotMaterial = new THREE.PointsMaterial({ size: 10, color: newcolor });
+    const dotMaterial = new THREE.PointsMaterial( { size: 10, sizeAttenuation: true, map: sprite, alphaTest: 0.5, transparent: false } );
+    dotMaterial.color.setHSL( 0.5, 0.9, 0.8, THREE.SRGBColorSpace );
     const dot = new THREE.Points(dotGeometry, dotMaterial);
     return dot
 
@@ -1675,30 +1685,11 @@ function animateCrossfade( x1,y1,z1, x2,y2,z2, crossfade_time ){
 let cursor = undefined;
 let cursor_x =0, cursor_y = 0, cursor_z = 0;
 let cursor_target_x = 20, cursor_target_y = 20, cursor_target_z = 20;
-cursor = createCursor( cursor_x, cursor_y, cursor_z );
+//cursor = createCursor( cursor_x, cursor_y, cursor_z );
 //scene.add(cursor);
 //animateCrossfade( 0,0,0, 20,20,20, 10000 );
 
 
-function updateCursor(){
-
-    // Check the object's X position
-    if ( cursor.position.x <= cursor_target_x ) {
-        cursor.position.x += 0.1; // You decide on the increment, higher value will mean the objects moves faster
-    }
-    if ( cursor.position.y <= cursor_target_y ) {
-        cursor.position.y += 0.1; // You decide on the increment, higher value will mean the objects moves faster
-    } 
-    if ( cursor.position.z <= cursor_target_z ) {
-        cursor.position.z += 0.1; // You decide on the increment, higher value will mean the objects moves faster
-    } else {
-        cursor.position.x = cursor_x;
-        cursor.position.y = cursor_y;
-        cursor.position.z = cursor_z;
-    }
-
-    // call the loop function again
-}
 
 
 //scene.remove(cursor);    
