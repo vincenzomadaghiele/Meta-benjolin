@@ -1,8 +1,5 @@
 # Latent benjolin interface
 
-This code opens a Web Socket in a web page that communicates with a Node.js server.
-The server is responsible for relaying OSC messages bidirectionally between the web page and the python server.
-
 ![alt text](https://github.com/vincenzomadaghiele/Latent-benjolin-interface/blob/main/frontend/GUI-example.png)
 
 ## Installing Dependencies
