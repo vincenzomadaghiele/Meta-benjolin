@@ -141,6 +141,8 @@ function drawBox(boxx, boxy, boxz, colorHue, arrayIndex){
                 let item_index = Number(newBox.id.split(" ")[1])
                 highlightBox( item_index );
                 event.target.style["cursor"] = "pointer";
+            } else {
+                event.target.style["cursor"] = "default";
             }
         }); 
         // CLICK INTERACTION
@@ -259,6 +261,8 @@ function drawCrossfade(){
                 let item_index = Number(newBox.id.split(" ")[1])
                 highlightBox(item_index);
                 event.target.style["cursor"] = "pointer";
+            } else {
+                event.target.style["cursor"] = "default";
             }
         }); 
         // CLICK INTERACTION
@@ -390,6 +394,8 @@ function drawMeander(){
                 let item_index = Number(newBox.id.split(" ")[1])
                 highlightBox(item_index);
                 event.target.style["cursor"] = "pointer";
+            } else {
+                event.target.style["cursor"] = "default";
             }
         }); 
         // CLICK INTERACTION
@@ -775,6 +781,9 @@ function disableAllInteractions(){
     document.getElementById("insert-meander").disabled = true;
     document.getElementById("bin").disabled = true;
     document.getElementById("play").disabled = true;
+    document.getElementById("record").disabled = true;
+    document.getElementById("download").disabled = true;
+
     for (var i = 0; i < numBoxes; i++) {
         let thisbox = document.getElementById("box "+i);
         thisbox.draggable = false;
@@ -833,6 +842,8 @@ function enableAllInteractions(){
     document.getElementById("insert-meander").disabled = false;
     document.getElementById("bin").disabled = false;
     document.getElementById("play").disabled = false;
+    document.getElementById("record").disabled = false;
+    document.getElementById("download").disabled = false;
     for (var i = 0; i < numBoxes; i++) {
         let thisbox = document.getElementById("box "+i);
         thisbox.draggable = true;
@@ -861,6 +872,39 @@ document.getElementById("record").addEventListener("click", (event) => {
             ISRECORDING = false;
         }
     }, maxrecordingduration+100);
+}); 
+
+// DOWNLOAD BUTTON
+document.getElementById("download").addEventListener("mouseover", (event) => {
+    highlightNone(); 
+    event.target.style["cursor"] = "pointer";
+}); 
+document.getElementById("download").addEventListener("click", (event) => {
+    if ( !ISPLAYBACKON ){
+        highlightNone(); 
+        SELECTED_ELEMENT = null;
+        //play();
+        const myFile = new File([JSON.stringify(compositionArray, null, 2)], 'benjolin-composition.json');
+        //console.log(JSON.stringify(compositionArray));
+
+        // Create a link and set the URL using `createObjectURL`
+        const link = document.createElement('a');
+        link.style.display = 'none';
+        link.href = URL.createObjectURL(myFile);
+        link.download = myFile.name;
+
+        // It needs to be added to the DOM so it can be clicked
+        document.body.appendChild(link);
+        link.click();
+
+        // To make this work on Firefox we need to wait
+        // a little while before removing it.
+        setTimeout(() => {
+            URL.revokeObjectURL(link.href);
+            link.parentNode.removeChild(link);
+        }, 0);
+
+    }
 }); 
 
 
@@ -978,7 +1022,7 @@ function dragLeave(e) {
             el.attr({"opacity": 0.3});
         });   
     }
-    event.target.style["cursor"] = "pointer";
+    event.target.style["cursor"] = "default";
 
 }
 
@@ -999,7 +1043,7 @@ function dragLeave(e) {
             el.attr({"opacity": 0.3});
         });   
     }
-    event.target.style["cursor"] = "pointer";
+    event.target.style["cursor"] = "default";
 
     // get the draggable element
     let id = e.dataTransfer.getData('text/plain');
@@ -1715,13 +1759,37 @@ let cursor_target_x = 20, cursor_target_y = 20, cursor_target_z = 20;
 
 
 
-
 //scene.remove(cursor);    
 
 //cursor = createCursor( compositionArray[box_n].x * scale_x - (scale_x/2), 
                         //compositionArray[box_n].y * scale_y - (scale_y/2), 
                         //compositionArray[box_n].z  * scale_z - (scale_z/2));
 //scene.remove(cursor);
+
+
+// TEXTLOG
+
+var open_textlog = document.getElementById("open-textlog");
+var close_textlog = document.getElementById("close-textlog");
+var textlog = document.getElementById("textlog");
+
+close_textlog.style.display = "none";
+textlog.style.display = "none";
+open_textlog.style["cursor"] = "pointer";
+close_textlog.style["cursor"] = "pointer";
+
+
+open_textlog.onclick = function(){
+    close_textlog.style.display = "block";
+    textlog.style.display = "block";
+    open_textlog.style.display = "none";
+}; 
+
+close_textlog.onclick = function(){
+    close_textlog.style.display = "none";
+    textlog.style.display = "none";
+    open_textlog.style.display = "block";
+}; 
 
 
 

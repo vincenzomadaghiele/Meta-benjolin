@@ -1,4 +1,7 @@
+@import url("https://fonts.googleapis.com/css?family=Inter");
+
 body {
+  font-family: 'Inter', sans-serif !important;
   background-color:  #000609;
   padding:0;
   margin:0;
@@ -23,6 +26,25 @@ body {
     left: 200px; top: 0px;
     padding: 30px;
     z-index: 100;
+}
+
+#commands-bar-3{
+    position:fixed;
+    left: 400px; top: 0px;
+    padding: 30px;
+    z-index: 100;
+}
+
+#text-logs{
+    position:fixed;
+    right: 10px; bottom: 10px;
+    padding: 0px;
+    z-index: 100;
+    color: white;
+    border: 1px solid white;
+    /*background-color: rgba(0, 128, 0, 0.2);
+    outline-style: solid;
+    outline-color: coral;*/
 }
 
 #scatterPlot{
