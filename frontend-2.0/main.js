@@ -575,9 +575,17 @@ function loopMeander( box_n ){
 }
 
 function playBox( box_n ){
+    // remove cursor
+    scene.remove(cursor);
     if ( compositionArray[box_n] instanceof Box ){
         highlightBox( box_n );
         sendBox( compositionArray[box_n].x, compositionArray[box_n].y, compositionArray[box_n].z );
+
+        let cursor_x = Number(compositionArray[box_n].x) * scale_x - (scale_x/2),
+            cursor_y = Number(compositionArray[box_n].y) * scale_y - (scale_y/2),
+            cursor_z = Number(compositionArray[box_n].z) * scale_z - (scale_z/2);
+        cursor = createCursor( cursor_x, cursor_y, cursor_z );
+        scene.add(cursor);
         
     } else if ( box_n != 0 && compositionArray[box_n] instanceof Crossfade ) {
         // check if before and after there are boxes
