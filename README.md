@@ -85,7 +85,3 @@ npx vite
 ```
 
 ### Known bugs
-Known bugs (solving them at the moment):
-- Path rendering on the point cloud is not accurate
-- Playback when clicking on boxes does not have the same duration every time
-
