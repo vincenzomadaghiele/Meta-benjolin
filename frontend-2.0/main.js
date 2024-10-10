@@ -80,6 +80,7 @@ class Box{
 class Meander{
     constructor(duration){
         this.duration = duration;
+        this.meanderComponents = undefined;
     }
 }
 class Crossfade{
@@ -147,7 +148,10 @@ function drawBox(boxx, boxy, boxz, colorHue, arrayIndex){
             if ( !ISPLAYBACKON ){
                 for (var i = 0; i < singlePlaybackTimeouts.length; i++) {
                     clearTimeout(singlePlaybackTimeouts[i]);
-                }            
+                }
+                for (var i = 0; i < meanderPlaybackTimeouts.length; i++) {
+                    clearTimeout(meanderPlaybackTimeouts[i]);
+                }
                 let item_index = Number(newBox.id.split(" ")[1])
                 SELECTED_ELEMENT = item_index;
                 //highlightBox( item_index ); 
@@ -259,7 +263,10 @@ function drawCrossfade(){
             if ( !ISPLAYBACKON ){
                 for (var i = 0; i < singlePlaybackTimeouts.length; i++) {
                     clearTimeout(singlePlaybackTimeouts[i]);
-                }            
+                }
+                for (var i = 0; i < meanderPlaybackTimeouts.length; i++) {
+                    clearTimeout(meanderPlaybackTimeouts[i]);
+                }   
                 let item_index = Number(newBox.id.split(" ")[1])
                 SELECTED_ELEMENT = item_index;
                 //highlightBox(item_index); 
@@ -385,6 +392,9 @@ function drawMeander(){
                 for (var i = 0; i < singlePlaybackTimeouts.length; i++) {
                     clearTimeout(singlePlaybackTimeouts[i]);
                 }            
+                for (var i = 0; i < meanderPlaybackTimeouts.length; i++) {
+                    clearTimeout(meanderPlaybackTimeouts[i]);
+                }
                 let item_index = Number(newBox.id.split(" ")[1])
                 SELECTED_ELEMENT = item_index;
                 //highlightBox(item_index); 
@@ -473,11 +483,18 @@ function highlightNone (){
         var newopacities = new Float32Array( N_POINTS ).fill(0.2);
         newopacities[compositionArray[SELECTED_ELEMENT].arrayIndex] = 1;
         particles.geometry.attributes.opacity.array = newopacities;
-        particles.geometry.attributes.opacity.needsUpdate = true;    
+        particles.geometry.attributes.opacity.needsUpdate = true;
+
     } else {
         var newopacities = new Float32Array( N_POINTS ).fill(BASE_OPACITY);
         particles.geometry.attributes.opacity.array = newopacities;
-        particles.geometry.attributes.opacity.needsUpdate = true;    
+        particles.geometry.attributes.opacity.needsUpdate = true;
+
+        for (var i = 0; i < meanderPlaybackTimeouts.length; i++) {
+            clearTimeout(meanderPlaybackTimeouts[i]);
+        }
+        scene.remove(cursor);
+    
     }
 }
 
@@ -548,6 +565,7 @@ function loopMeander( box_n ){
     sendMeander(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z, 
         compositionArray[box_n+1].x, compositionArray[box_n+1].y, compositionArray[box_n+1].z, 
         compositionArray[box_n].duration / 1000);
+    animateMeander( compositionArray[box_n].meanderComponents, compositionArray[box_n].duration );
     var selectedBoxTimeout = setTimeout(function() {
         if ( SELECTED_ELEMENT != null ){
             loopMeander( box_n );
@@ -559,7 +577,8 @@ function loopMeander( box_n ){
 function playBox( box_n ){
     if ( compositionArray[box_n] instanceof Box ){
         highlightBox( box_n );
-        sendBox( compositionArray[box_n].x, compositionArray[box_n].y, compositionArray[box_n].z )
+        sendBox( compositionArray[box_n].x, compositionArray[box_n].y, compositionArray[box_n].z );
+        
     } else if ( box_n != 0 && compositionArray[box_n] instanceof Crossfade ) {
         // check if before and after there are boxes
         if (compositionArray[box_n-1] instanceof Box && compositionArray[box_n+1] instanceof Box){
@@ -585,12 +604,14 @@ function playBox( box_n ){
             if ( !ISPLAYBACKON ){
                 // loop the meander
                 loopMeander( box_n );
+                
             } else {
                 // play meander only once
                 sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z);
                 sendMeander(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z, 
                     compositionArray[box_n+1].x, compositionArray[box_n+1].y, compositionArray[box_n+1].z, 
-                    compositionArray[box_n].duration / 1000);    
+                    compositionArray[box_n].duration / 1000);
+                animateMeander( compositionArray[box_n].meanderComponents, compositionArray[box_n].duration );
             }    
         } else {
             console.log('Meander can only by played if it placed is between two circles');
@@ -703,7 +724,7 @@ var play = function(){
             if( ISPLAYBACKON ){
                 console.log('playing: ',compositionArray[i]);
                 SELECTED_ELEMENT = i;
-                highlightBox(i);
+                //highlightBox(i);
                 playBox(i);
                 //sendBox(compositionArray[i].x, compositionArray[i].y);
                 //highlightBoxElement(document.getElementById('box '+i)); 
@@ -734,6 +755,9 @@ function disableAllInteractions(){
     for (var i = 0; i < singlePlaybackTimeouts.length; i++) {
         clearTimeout(singlePlaybackTimeouts[i]);
     }
+    for (var i = 0; i < meanderPlaybackTimeouts.length; i++) {
+        clearTimeout(meanderPlaybackTimeouts[i]);
+    }
 }
 
 // STOP BUTTON
@@ -754,6 +778,9 @@ var stopPlayback = function(){
     }
     for (var i = 0; i < singlePlaybackTimeouts.length; i++) {
         clearTimeout(singlePlaybackTimeouts[i]);
+    }
+    for (var i = 0; i < meanderPlaybackTimeouts.length; i++) {
+        clearTimeout(meanderPlaybackTimeouts[i]);
     }
     //sendStop();
     SELECTED_ELEMENT = null;
@@ -1100,20 +1127,16 @@ function init() {
 	const vertices = [];
     const opacities = new Float32Array( N_POINTS );
 	for ( let i = 0; i < N_POINTS; i ++ ) {
+
         let this_x = x[i] * scale_x - (scale_x/2);
         let this_y = y[i] * scale_y - (scale_y/2);
         let this_z = z[i] * scale_z - (scale_z/2);
 		vertices.push( this_x, this_y, this_z);
-
-        //const vx = Math.random();
-        //const vy = Math.random();
-        //const vz = Math.random();
-        //color.setRGB( vx, vy, vz );
         color.setRGB( 255, 0, 0 );
-
         colors.push( color.r, color.g, color.b );
         sizes[i] = PARTICLE_SIZE;
         opacities[i] = BASE_OPACITY;
+
 	}
 	geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
     geometry.setAttribute( 'customColor', new THREE.Float32BufferAttribute( colors, 3 ) );
@@ -1183,6 +1206,9 @@ function render() {
         pointToBasic(CURRENTPICKEDINDEX);
         CURRENTPICKEDINDEX = null;
     }
+
+    // CURSOR ANIMATION 
+    //updateCursor();
     renderer.render( scene, camera );
 }
 
@@ -1400,10 +1426,12 @@ let arrowsIDs = []
 function renderPath(){
     // remove all previous lines
     for (let i = 0; i < arrowsIDs.length; i++) {
-        console.log(arrowsIDs[i])
+        //console.log(arrowsIDs[i])
         var selectedObject = scene.getObjectByName(arrowsIDs[i]);
         scene.remove( selectedObject );
     }
+    MEANDERS_LIST = [];
+    numMeanders = 0;
     // draw new arrows
     for (let i = 0; i < compositionArray.length; i++) {
         if (i !=0){ // check if not on the first object
@@ -1446,29 +1474,12 @@ function renderPath(){
 
                     sendDrawMeander(x1, y1, z1, x2, y2, z2);
                     
-                    /*
-                    linepoints.push( new THREE.Vector3( x1,y1,z1 )); 
-                    linepoints.push( new THREE.Vector3( x2,y2,z2 )); 
-
-                    let linegeometry = new THREE.BufferGeometry().setFromPoints( linepoints );
-                    let linematerial = new THREE.LineDashedMaterial( {  color: linecolor, dashSize: 1, gapSize: 2, opacity: 0.9 } );
-                    let line = new THREE.Line( linegeometry, linematerial );
-                    line.computeLineDistances();
-                    //let line = customArrow(x1,y1,z1,x2,y2,z2, 10, 0x0000ff);
-                    let line_name = "meander "+compositionArray[i-1].arrayIndex+' '+compositionArray[i+1].arrayIndex;
-                    line.name = line_name;
-                    arrowsIDs.push(line_name);
-                    scene.add( line );
-                    */
-
                 }
             } 
             else if (compositionArray[i] instanceof Box){
                 // check if before there is a box
                 if (compositionArray[i-1] instanceof Box){ 
                     // add straight line if jump
-                    //x: [compositionArray[i-1].x,compositionArray[i+1].x],
-                    //y: [compositionArray[i-1].y,compositionArray[i+1].y],
                     let linepoints = [];
                     let x1 = compositionArray[i-1].x * scale_x - (scale_x/2),
                         y1 = compositionArray[i-1].y * scale_y - (scale_y/2),
@@ -1488,27 +1499,17 @@ function renderPath(){
                     arrowsIDs.push(line_name);
                     scene.add( line );
 
-                    //var to = new THREE.Vector3( x2, y2, z2 );
-                    //var from = new THREE.Vector3( x1, y1, z1 );
-                    //var direction = to.clone().sub(from);
-                    //var length = direction.length();
-                    //var arrowHelper = new THREE.ArrowHelper(direction.normalize(), from, length, 0xffff00 );
-                    //arrowHelper.line.material = linematerial;
-                    //arrowHelper.line.computeLineDistances();
-                    //scene.add( arrowHelper );
-
                 }
             }
-
         }
     }
 }
 
-//let MEANDERS_LIST = [];
+let MEANDERS_LIST = [];
+let numMeanders = 0;
 let newMeanderIndices = undefined;
 port.on("message", function (oscMessage) {
     $("#message").text(JSON.stringify(oscMessage, undefined, 2));
-    //MEANDERS_LIST.push(oscMessage.args[0].split(" "));
     newMeanderIndices = oscMessage.args[0].split(" ");
     var newMeanderIndices_filtered = newMeanderIndices.filter(function (el) {
         return el != "";
@@ -1539,9 +1540,148 @@ port.on("message", function (oscMessage) {
             scene.add( line );
         
         }
+        MEANDERS_LIST.push(newMeanderIndices_filtered);
+        let internalMeanderCount = 0;
+        //console.log(compositionArray)
+        for ( let i = 0; i < compositionArray.length; i++ ) {
+            if ( compositionArray[i] instanceof Meander ){
+                if (internalMeanderCount == numMeanders ){
+                    compositionArray[i].meanderComponents = MEANDERS_LIST[internalMeanderCount];
+                    console.log('internalMeanderCount', internalMeanderCount)
+                }
+                internalMeanderCount += 1;
+            }
+        }
+        numMeanders += 1;
     }
-
-    //console.log("message", oscMessage.args[0].split("-"));
-    //console.log("message", oscMessage[0].split("-"));
 });
 
+
+function createCursor( cursor_x, cursor_y, cursor_z ){
+
+    const dotGeometry = new THREE.BufferGeometry();
+    dotGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array([cursor_x, cursor_y, cursor_z]), 3));
+    const dotMaterial = new THREE.PointsMaterial({ size: 20, color: 0xfff000 });
+    const dot = new THREE.Points(dotGeometry, dotMaterial);
+    return dot
+
+}
+
+function setCursorPosition( cursor_x, cursor_y, cursor_z ){
+    cursor.position.x = cursor_x;
+    cursor.position.y = cursor_y;
+    cursor.position.z = cursor_z;
+}
+
+let meanderPlaybackTimeouts = []
+function animateMeander( meander, time ){
+    // the interval at which the meander changes position
+    let meandercursortime = 0
+    let time_interval = time / (meander.length/3);
+    let cursor_x = Number(meander[0]), //* scale_x - (scale_x/2),
+        cursor_y = Number(meander[1]), //* scale_y - (scale_y/2),
+        cursor_z = Number(meander[2]); //* scale_z - (scale_z/2);
+    cursor = createCursor( cursor_x, cursor_y, cursor_z );
+    scene.add(cursor);
+
+    for ( let i = 0; i < meander.length; i+=3 ) {
+        var meanderCursorTimeout = setTimeout(function() {
+            cursor_x = Number(meander[i]) * scale_x - (scale_x/2);
+            cursor_y = Number(meander[i+1]) * scale_y - (scale_y/2);
+            cursor_z = Number(meander[i+2]) * scale_z - (scale_z/2);
+            setCursorPosition( cursor_x, cursor_y, cursor_z );
+            //console.log(cursor_x, cursor_y, cursor_z);
+        }, meandercursortime );
+        meandercursortime += time_interval;
+        meanderPlaybackTimeouts.push(meanderCursorTimeout);
+    }
+    var meanderCursorTimeout = setTimeout(function() {
+        scene.remove(cursor);
+    }, meandercursortime );
+    meanderPlaybackTimeouts.push(meanderCursorTimeout);
+}
+
+
+let cursor = undefined;
+let cursor_x =0, cursor_y = 0, cursor_z = 0;
+let cursor_target_x = 20, cursor_target_y = 20, cursor_target_z = 20;
+//cursor = createCursor( cursor_x, cursor_y, cursor_z );
+
+function animateCursorCrossfade (){
+
+}
+
+
+function updateCursor(){
+
+    // Check the object's X position
+    if ( cursor.position.x <= cursor_target_x ) {
+        cursor.position.x += 0.1; // You decide on the increment, higher value will mean the objects moves faster
+    }
+    if ( cursor.position.y <= cursor_target_y ) {
+        cursor.position.y += 0.1; // You decide on the increment, higher value will mean the objects moves faster
+    } 
+    if ( cursor.position.z <= cursor_target_z ) {
+        cursor.position.z += 0.1; // You decide on the increment, higher value will mean the objects moves faster
+    } else {
+        cursor.position.x = cursor_x;
+        cursor.position.y = cursor_y;
+        cursor.position.z = cursor_z;
+    }
+
+    // call the loop function again
+}
+
+
+//scene.remove(cursor);    
+
+//cursor = createCursor( compositionArray[box_n].x * scale_x - (scale_x/2), 
+                        //compositionArray[box_n].y * scale_y - (scale_y/2), 
+                        //compositionArray[box_n].z  * scale_z - (scale_z/2));
+//scene.remove(cursor);
+
+
+
+/*
+// TIMELINE CURSOR
+let cursor_x = 0.1;
+let cursor_y = 0.1;
+let cursor_z = 0.1;
+
+const pointergeometry = new THREE.BufferGeometry();
+const pointervertices = []
+let pointer_x = cursor_x * scale_x - (scale_x/2);
+let pointer_y = cursor_y * scale_y - (scale_y/2);
+let pointer_z = cursor_z * scale_z - (scale_z/2);
+pointervertices.push( pointer_x, pointer_y, pointer_z);
+
+const pointercolors = []
+const pointercolor = new THREE.Color();
+pointercolor.setRGB( 255, 0, 0 );
+pointercolors.push( pointercolor.r, pointercolor.g, pointercolor.b );
+
+let pointersize = PARTICLE_SIZE;
+let pointeropacity = BASE_OPACITY;
+
+pointergeometry.setAttribute( 'position', new THREE.Float32BufferAttribute( pointervertices, 3 ) );
+pointergeometry.setAttribute( 'customColor', new THREE.Float32BufferAttribute( pointercolors, 3 ) );
+pointergeometry.setAttribute( 'size', new THREE.Float32BufferAttribute( pointersize, 1 ) );
+pointergeometry.setAttribute( 'opacity', new THREE.Float32BufferAttribute( pointeropacity, 1 ) );
+
+let pointermaterial = new THREE.ShaderMaterial( {
+    uniforms: {
+        color: { value: new THREE.Color( 0xffffff ) },
+        pointTexture: { value: new THREE.TextureLoader().load( 'imgs/disc.png' ) },
+        alphaTest: { value: 0.9 }
+    },
+    vertexShader: document.getElementById( 'vertexshader' ).textContent,
+    fragmentShader: document.getElementById( 'fragmentshader' ).textContent,
+    blending: THREE.AdditiveBlending,
+    depthTest: false,
+    transparent: true
+} );
+
+// RENDER POINTS
+const timeline_cursor = new THREE.Points( pointergeometry, pointermaterial );
+scene.add( timeline_cursor );
+*/
