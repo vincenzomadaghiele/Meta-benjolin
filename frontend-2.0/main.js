@@ -152,6 +152,9 @@ function drawBox(boxx, boxy, boxz, colorHue, arrayIndex){
                 for (var i = 0; i < meanderPlaybackTimeouts.length; i++) {
                     clearTimeout(meanderPlaybackTimeouts[i]);
                 }
+                for (var i = 0; i < crossfadePlaybackTimeouts.length; i++) {
+                    clearTimeout(crossfadePlaybackTimeouts[i]);
+                }            
                 let item_index = Number(newBox.id.split(" ")[1])
                 SELECTED_ELEMENT = item_index;
                 //highlightBox( item_index ); 
@@ -267,6 +270,9 @@ function drawCrossfade(){
                 for (var i = 0; i < meanderPlaybackTimeouts.length; i++) {
                     clearTimeout(meanderPlaybackTimeouts[i]);
                 }   
+                for (var i = 0; i < crossfadePlaybackTimeouts.length; i++) {
+                    clearTimeout(crossfadePlaybackTimeouts[i]);
+                }            
                 let item_index = Number(newBox.id.split(" ")[1])
                 SELECTED_ELEMENT = item_index;
                 //highlightBox(item_index); 
@@ -395,6 +401,9 @@ function drawMeander(){
                 for (var i = 0; i < meanderPlaybackTimeouts.length; i++) {
                     clearTimeout(meanderPlaybackTimeouts[i]);
                 }
+                for (var i = 0; i < crossfadePlaybackTimeouts.length; i++) {
+                    clearTimeout(crossfadePlaybackTimeouts[i]);
+                }            
                 let item_index = Number(newBox.id.split(" ")[1])
                 SELECTED_ELEMENT = item_index;
                 //highlightBox(item_index); 
@@ -493,6 +502,9 @@ function highlightNone (){
         for (var i = 0; i < meanderPlaybackTimeouts.length; i++) {
             clearTimeout(meanderPlaybackTimeouts[i]);
         }
+        for (var i = 0; i < crossfadePlaybackTimeouts.length; i++) {
+            clearTimeout(crossfadePlaybackTimeouts[i]);
+        }    
         scene.remove(cursor);
     
     }
@@ -552,6 +564,9 @@ function loopCrossfade( box_n ){
     sendCrossfade(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z, 
         compositionArray[box_n+1].x, compositionArray[box_n+1].y, compositionArray[box_n+1].z, 
         compositionArray[box_n].duration / 1000);
+    animateCrossfade( compositionArray[box_n-1].x,compositionArray[box_n-1].y,compositionArray[box_n-1].z,   
+        compositionArray[box_n+1].x,compositionArray[box_n+1].y,compositionArray[box_n+1].z, 
+        compositionArray[box_n].duration );
     var selectedBoxTimeout = setTimeout(function() {
         if ( SELECTED_ELEMENT != null ){
             loopCrossfade( box_n );
@@ -594,12 +609,16 @@ function playBox( box_n ){
             if ( !ISPLAYBACKON ){
                 // loop the crossfade
                 loopCrossfade( box_n );
+
             } else {
                 // play crossfade only once
                 sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z);
                 sendCrossfade(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z, 
                     compositionArray[box_n+1].x, compositionArray[box_n+1].y, compositionArray[box_n+1].z, 
                     compositionArray[box_n].duration / 1000);    
+                animateCrossfade( compositionArray[box_n-1].x,compositionArray[box_n-1].y,compositionArray[box_n-1].z,   
+                                compositionArray[box_n+1].x,compositionArray[box_n+1].y,compositionArray[box_n+1].z, 
+                                compositionArray[box_n].duration );
             }    
         } else {
             console.log('Crossfade can only by played if it is placed between two circles');
@@ -766,6 +785,9 @@ function disableAllInteractions(){
     for (var i = 0; i < meanderPlaybackTimeouts.length; i++) {
         clearTimeout(meanderPlaybackTimeouts[i]);
     }
+    for (var i = 0; i < crossfadePlaybackTimeouts.length; i++) {
+        clearTimeout(crossfadePlaybackTimeouts[i]);
+    }
 }
 
 // STOP BUTTON
@@ -789,6 +811,9 @@ var stopPlayback = function(){
     }
     for (var i = 0; i < meanderPlaybackTimeouts.length; i++) {
         clearTimeout(meanderPlaybackTimeouts[i]);
+    }
+    for (var i = 0; i < crossfadePlaybackTimeouts.length; i++) {
+        clearTimeout(crossfadePlaybackTimeouts[i]);
     }
     //sendStop();
     SELECTED_ELEMENT = null;
@@ -1540,8 +1565,9 @@ port.on("message", function (oscMessage) {
             linepoints.push( new THREE.Vector3( x2,y2,z2 )); 
 
             let linegeometry = new THREE.BufferGeometry().setFromPoints( linepoints );
-            let linematerial = new THREE.LineBasicMaterial( { color: linecolor } );
+            let linematerial = new THREE.LineDashedMaterial( {  color: linecolor, dashSize: 2, gapSize: 2, opacity: 0.9 } );
             let line = new THREE.Line( linegeometry, linematerial );
+            line.computeLineDistances();
             let line_name = "meandercomponent "+x1+y1+z1+" "+x2+y2+z2;
             line.name = line_name;
             arrowsIDs.push(line_name);
@@ -1610,14 +1636,48 @@ function animateMeander( meander, time ){
 }
 
 
+let crossfadePlaybackTimeouts = []
+function animateCrossfade( x1,y1,z1, x2,y2,z2, crossfade_time ){
+    // the interval at which the meander changes position
+    let crossfade_time_granularity = 200;
+    let meandercursortime = 0
+    let time_interval = crossfade_time / crossfade_time_granularity;
+    let cursor_x1 = x1 * scale_x - (scale_x/2),
+        cursor_y1 = y1 * scale_y - (scale_y/2),
+        cursor_z1 = z1 * scale_z - (scale_z/2);
+    let cursor_x2 = x2 * scale_x - (scale_x/2),
+        cursor_y2 = y2 * scale_y - (scale_y/2),
+        cursor_z2 = z2 * scale_z - (scale_z/2);
+    let space_interval_x = (cursor_x2-cursor_x1) / crossfade_time_granularity;
+    let space_interval_y = (cursor_y2-cursor_y1) / crossfade_time_granularity;
+    let space_interval_z = (cursor_z2-cursor_z1) / crossfade_time_granularity;
+    cursor = createCursor( cursor_x1, cursor_y1, cursor_z1 );
+    scene.add(cursor);
+
+    for ( let i = 0; i < crossfade_time_granularity; i++ ) {
+        var crossfadeCursorTimeout = setTimeout(function() {
+
+            cursor.position.x += space_interval_x;
+            cursor.position.y += space_interval_y;
+            cursor.position.z += space_interval_z;
+            //console.log(cursor_x, cursor_y, cursor_z);
+        }, meandercursortime );
+        meandercursortime += time_interval;
+        crossfadePlaybackTimeouts.push(crossfadeCursorTimeout);
+    }
+    var crossfadeCursorTimeout = setTimeout(function() {
+        scene.remove(cursor);
+    }, meandercursortime );
+    crossfadePlaybackTimeouts.push(crossfadeCursorTimeout);
+}
+
+
 let cursor = undefined;
 let cursor_x =0, cursor_y = 0, cursor_z = 0;
 let cursor_target_x = 20, cursor_target_y = 20, cursor_target_z = 20;
-//cursor = createCursor( cursor_x, cursor_y, cursor_z );
-
-function animateCursorCrossfade (){
-
-}
+cursor = createCursor( cursor_x, cursor_y, cursor_z );
+//scene.add(cursor);
+//animateCrossfade( 0,0,0, 20,20,20, 10000 );
 
 
 function updateCursor(){
