@@ -3,15 +3,21 @@
 const kdTree = require("kd-tree-javascript")
 
 const fs = require('fs');
-const csv = require('csv-parser');
 
-const latent_coordinates = [];
+function readJsonFile(filePath) {
+  try {
+    const data = fs.readFileSync(filePath, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('Error reading JSON file:', error);  
+    return null;
+  }
+}
 
-fs.createReadStream(csvFile)
-  .pipe(csv())
-  .on('data', (row) => {
-    latent_coordinates.push(row);
-  })
+const path_parameters = 'C:\Users\Leonard\GitPrivate\Latent-benjolin-interface\python_server\parameters.json';
+const parameters = readJsonFile(path_parameters);
+const path_latent = 'C:\Users\Leonard\GitPrivate\Latent-benjolin-interface\python_server\dataset3D.json';
+const latent = readJsonFile(path_latent);
 
 var distance = function(a, b) {
   return Math.pow(a.x - b.x, 2) +  Math.pow(a.y - b.y, 2) + Math.pow(a.z - b.z, 2);
@@ -56,12 +62,17 @@ class LatentSpace {
   }
 
   getPointInfo(index) {
-    return [this.latent[index], this.parameter[index]];
+    return [this.latent[index], this.parameters[index]];
   }
 
   getIndexGivenLatent(latent) {
     const [distance, index] = this.kdtree.nearest(latent, this.neighbors);
     return index;
+  }
+
+  getParamsGivenLatent(latent) {
+    index = this.getIndexGivenLatent(latent)
+    return this.parameters[index]
   }
 
   findNextPoint(aIndex, bIndex, path) {
@@ -96,6 +107,7 @@ class LatentSpace {
     index_min = findIndexOfMinValue(costValues)
     return index_min
 }
+
   calculateMeander(self, idx1, idx2) {
     let reachedGoal = false;
     const path = [idx1];
