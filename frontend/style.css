@@ -1,72 +1,70 @@
-.timeline {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: center;
-    background-color:rgb(0, 0, 0);
-    height: 85vh;
+@import url("https://fonts.googleapis.com/css?family=Inter");
+
+body {
+  font-family: 'Inter', sans-serif !important;
+  background-color:  #000609;
+  padding:0;
+  margin:0;
+} 
+
+#timeline{
+    position:fixed;
+    left: 0px; top: 120px;
+    float:left; display:inline; width: 50px;
+    padding: 10px;
+    z-index: 100;
+}
+#commands-bar{
+    position:fixed;
+    left: 0px; top: 0px;
+    padding: 30px;
+    z-index: 100;
 }
 
-/*.compose-bar {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background-color:rgb(0, 0, 0);
-    height: 85vh;
-}*/
-
-.latent-space {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: center;
-    height: 85vh;
+#commands-bar-2{
+    position:fixed;
+    left: 200px; top: 0px;
+    padding: 30px;
+    z-index: 100;
 }
 
-hr {
-    border-top: solid #ccc;
-    /*display: block;
-    height: 1px;
-    border: 0;
-    border-top: 1px solid #ccc;
-    /*margin: 1em 0;
-    padding: 0;*/
+#commands-bar-3{
+    position:fixed;
+    left: 400px; top: 0px;
+    padding: 30px;
+    z-index: 100;
 }
 
-.hide {
-    display: none;
+#text-logs{
+    position:fixed;
+    right: 10px; bottom: 10px;
+    padding: 0px;
+    z-index: 100;
+    color: white;
+    border: 1px solid white;
+    height: 20px;
+    width: 20px;
+    font-size: 15px;
+    /*background-color: rgba(0, 128, 0, 0.2);
+    outline-style: solid;
+    outline-color: coral;*/
 }
 
-.drag-over {
-    border: dashed 3px red;
+#scatterPlot{
+    position:fixed;
+
 }
 
-.click-on-box {
-    border: solid 3px black;
-}
-
-#resize-box {
-    background-color: red;
-    width: 60%;
-    height: '10vh';
-    resize: vertical;
-    overflow-x: auto;
-}
-
-.clickable-element:hover {
-    cursor: pointer;
-}
-
-.hover:hover {
-    cursor: pointer;
+#composition-bar {
+    position:absolute;
+    left: 50px; top: 120px;
+    float:left; display:inline; width: 150px;
 }
 
 .overlay {
-	background-color: #ff0000;
-	width: 100px;
-	height: 100px;
-	position: absolute;
-	top: 0;
-	left: 0;
+    background-color: rgba(255, 0, 0, 0.1);
+    position: absolute;
+    top: 0;
+    left: 0;
     opacity: 0.5;
 }

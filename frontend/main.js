@@ -1,41 +1,1259 @@
+// GRAPHICS GLOBAL PARAMETERS
+const COMPOSITION_BAR_WIDTH_PX = 150;
+const MARGIN_PX = 20
+const SELECTED_OPACITY = 1;
+const MIN_OPACITY = 0.3;
+const HOVER_OPACITY = 0.6;
+const COMPOSITION_BAR_HEIGHT_PX = 1000;
+const TIME_TO_POINTSIZE = 0.003;
+let raphaels = [];
+
+
+// DRAW TIMELINE
+var R_timeline = Raphael("timeline", 50, window.innerHeight - (90 + 60 + 20) );
+var path_timeline = R_timeline.path("M25 0L25 "+(window.innerHeight - (90 + 60 +50))).attr({
+    stroke: '#FFFFFF',
+    'stroke-width': 1,
+    'arrow-end':'classic-wide-long',
+    opacity: 0.5
+});
+var timeline_pathArray = path_timeline.attr("path");
+window.addEventListener( 'resize', graphicsOnResize );
+
+// UPDATE WINDOW SIZE
+function graphicsOnResize() {
+    // update timeline
+    R_timeline.setSize(50, window.innerHeight - (90 + 60 + 20));
+    //path_timeline.attr({});
+    timeline_pathArray[1][2] = window.innerHeight - (90 + 60 +50);
+    path_timeline.attr({path: timeline_pathArray});
+
+    // update box sizes ?
+}
+
+
+// INTERACTION FLAGS
+var SELECTED_ELEMENT = null;
+var ISPLAYBACKON = false;
+let QUEUED_TIMEOUTS = []; // all timeouts queued for playback
+
+// COMPOSITION TIMINGS
+// window.innerHeight = 514 = 2 min = 120 s
+// a radius of 55 means a diameter of 110 --> 110 / 514 = 0.214. multiplied by 120 --> 25.16 s
+const BASIC_ELEMENT_T = 5000 // new element when created has duration 5s
+const MAX_T = 10000 // max element duration is 20s
+const MIN_T = 1000 // min element duration is 1s
+const MAX_COMPOSITION_DURATION = 60000 // 12000 milliseconds = 2 minutes
+
+function timesToPxHeight (time_ms) {
+    // adaptively calculate element height in pixel corresponding to time in milliseconds
+    // window height : max duration = height_px : time_ms
+    // dependent on window height
+    //let conversion_factor = window.innerHeight / MAX_COMPOSITION_DURATION;
+    
+    // dependent on set size
+    let conversion_factor = COMPOSITION_BAR_HEIGHT_PX / MAX_COMPOSITION_DURATION / 2;
+    let height_px = time_ms * conversion_factor;
+    return height_px
+}
+function pxHeightToTimesMs (height_px) {
+    // adaptively calculate element height in pixel corresponding to time in milliseconds
+    // window height : max duration = height_px : time_ms
+    // dependent on window height
+    //let time_ms = height_px * MAX_COMPOSITION_DURATION / window.innerHeight;
+    // dependent on set size
+    let time_ms = height_px * MAX_COMPOSITION_DURATION / COMPOSITION_BAR_HEIGHT_PX * 2;
+    return time_ms
+}
+
+
+// COMPOSITION FUNCTIONALITIES
+class Box{
+    constructor(x, y, z, duration, arrayIndex){
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.duration = duration;
+        this.arrayIndex = arrayIndex; // index in the array
+    }
+}
+class Meander{
+    constructor(duration){
+        this.duration = duration;
+        this.meanderComponents = undefined;
+    }
+}
+class Crossfade{
+    constructor(duration){
+        this.duration = duration;
+    }
+}
+
+const compositionArray = [];
+
+let numBoxes = 0;
+function calculateCurrentCompostionTime(){
+    let compositionTime = 0;
+    for (let i = 0; i < compositionArray.length; i++) {
+        compositionTime += compositionArray[i].duration
+    }
+    return compositionTime
+}
+
+
+
+// BOX --> CIRCLE
+function drawBox(boxx, boxy, boxz, colorHue, arrayIndex){
+    let compositionTime = calculateCurrentCompostionTime();
+    if ( compositionTime < MAX_COMPOSITION_DURATION){
+
+        let newBox = document.createElement("div");
+        newBox.id = "box "+numBoxes;
+        newBox.className = 'box';
+
+        // put out of draw box
+        document.getElementById("composition-bar").appendChild(newBox); 
+
+        let boxStartHeight = timesToPxHeight( BASIC_ELEMENT_T );
+        var R = Raphael("box "+numBoxes, COMPOSITION_BAR_WIDTH_PX, boxStartHeight + MARGIN_PX );
+        var s = R.circle( COMPOSITION_BAR_WIDTH_PX/2 , (boxStartHeight + MARGIN_PX) / 2 , boxStartHeight / 2 ).attr({
+                fill: "hsb("+colorHue+", .5, .5)",
+                stroke: "none",
+                opacity: .3
+            });
+        var c = R.circle( COMPOSITION_BAR_WIDTH_PX/2 , (boxStartHeight + MARGIN_PX) / 2 , boxStartHeight / 2 ).attr({
+                fill: "none",
+                stroke: "hsb("+colorHue+", 1, 1)",
+                "stroke-width": 8,
+                opacity: 0.3
+            });
+        c.sized = s;
+        c.parentDiv = document.getElementById(newBox.id);
+        c.raph = R;
+        c.drag(move, start, up);
+        s.outer = c;
+
+        newBox.draggable = 'true';
+
+        // HOVER INTERACTION
+        newBox.addEventListener("mouseover", (event) => {
+            if ( !ISPLAYBACKON ){
+                let item_index = Number(newBox.id.split(" ")[1])
+                highlightBox( item_index );
+                event.target.style["cursor"] = "pointer";
+                textlog.innerHTML="A circle represents a fixed state of the system <br><br> Click on it to listen to this state. <br> Drag the border of the circle to increase this state's duration <br> Drag this element on another one to put it on top of it. ";
+            } else {
+                event.target.style["cursor"] = "default";
+                textlog.innerHTML="Single element selection is disabled during playback";
+            }
+        }); 
+        // CLICK INTERACTION
+        newBox.addEventListener("click", (event) => {
+            if ( !ISPLAYBACKON ){
+                for (var i = 0; i < singlePlaybackTimeouts.length; i++) {
+                    clearTimeout(singlePlaybackTimeouts[i]);
+                }
+                for (var i = 0; i < meanderPlaybackTimeouts.length; i++) {
+                    clearTimeout(meanderPlaybackTimeouts[i]);
+                }
+                for (var i = 0; i < crossfadePlaybackTimeouts.length; i++) {
+                    clearTimeout(crossfadePlaybackTimeouts[i]);
+                }            
+                let item_index = Number(newBox.id.split(" ")[1])
+                SELECTED_ELEMENT = item_index;
+                //highlightBox( item_index ); 
+                playBox( item_index );
+                textlog.innerHTML="A circle represents a fixed state of the system <br><br> Click on it to listen to this state. <br> Drag the border of the circle to increase this state's duration <br> Drag this element on another one to put it on top of it. ";
+            } else {
+                textlog.innerHTML="Single element selection is disabled during playback";
+            }
+        }); 
+        // DRAG AND DROP INTERACTION
+        newBox.addEventListener('dragstart', dragStart);
+        newBox.addEventListener('dragenter', dragEnter)
+        newBox.addEventListener('dragover', dragOver);
+        newBox.addEventListener('dragleave', dragLeave);
+        newBox.addEventListener('drop', drop);
+
+        var duration = pxHeightToTimesMs(boxStartHeight); 
+        compositionArray.push(new Box(boxx, boxy, boxz, duration, arrayIndex));
+
+        numBoxes += 1;
+        raphaels.push(R);
+    }
+    renderPath();
+}
+// CIRCLE INTERACTIONS
+var start = function () {
+    if ( !ISPLAYBACKON ){
+        this.ISMOVING = true;
+        this.ox = this.attr("cx");    
+        this.oy = this.attr("cy");
+        this.or = this.attr("r");
+        this.attr({opacity: 1});
+        this.sized.ox = this.sized.attr("cx");    
+        this.sized.oy = this.sized.attr("cy");
+        this.sized.or = this.attr("r");
+        this.sized.attr({opacity: 1});
+    }
+};
+var move = function (dx, dy) {
+    if ( !ISPLAYBACKON ){
+        let newr = this.or + (dy < 0 ? -1 : 1) * Math.sqrt(2*dy*dy);
+        let max_r_px = timesToPxHeight( MAX_T );
+        let min_r_px = timesToPxHeight( MIN_T );
+        if ( newr < max_r_px/2 && newr > min_r_px/2 ) {
+            this.attr({r: newr});
+            this.sized.attr({r: newr });
+            this.parentDiv.style["height"] = newr*2+MARGIN_PX;
+            this.raph.setSize(COMPOSITION_BAR_WIDTH_PX, newr*2+MARGIN_PX);
+            this.attr({cy: (newr*2+MARGIN_PX)/2});
+            this.sized.attr({cy: (newr*2+MARGIN_PX)/2});
+            //resize marker on scatterplot
+            let item_index = Number(this.parentDiv.id.split(" ")[1]);
+            changePointSize(item_index, newr*2);
+        }
+    }
+};
+var up = function () {
+    if ( !ISPLAYBACKON ){
+        this.ISMOVING = false;
+        this.attr({opacity: 0.05 });
+        this.sized.attr({opacity: .8 });
+        let compositionIndex = Number(this.parentDiv.id.split(" ")[1]);
+        compositionArray[compositionIndex].duration = pxHeightToTimesMs(this.attr("r"));
+    }
+}
+
+// CROSSFADE
+function drawCrossfade(){
+    let compositionTime = calculateCurrentCompostionTime();
+    if ( compositionTime < MAX_COMPOSITION_DURATION){
+
+        let newBox = document.createElement("div");
+        newBox.id = "box "+numBoxes;
+        newBox.className = 'crossfade';
+        document.getElementById("composition-bar").appendChild(newBox); 
+
+        let boxStartHeight = timesToPxHeight( BASIC_ELEMENT_T );
+        // from https://jsfiddle.net/TfE2X/
+        var R = Raphael("box "+numBoxes, COMPOSITION_BAR_WIDTH_PX, boxStartHeight+MARGIN_PX);
+        var path = R.path("M"+(COMPOSITION_BAR_WIDTH_PX/2)+" 0L"+(COMPOSITION_BAR_WIDTH_PX/2)+" "+boxStartHeight).attr({
+            stroke: '#FFFFFF',
+            'stroke-width': 3,
+            'arrow-end':'classic-wide-long',
+            opacity: 0.3
+        });
+        var pathArray = path.attr("path");
+        var handle = R.circle(COMPOSITION_BAR_WIDTH_PX/2,boxStartHeight-5,10).attr({
+            fill: "#FFFFFF",
+            cursor: "pointer",
+            "stroke-width": 10,
+            stroke: "transparent",
+            opacity: 0.3
+        });
+        handle.pathArray = pathArray;
+        handle.path = path;
+        handle.parentDiv = document.getElementById(newBox.id);
+        handle.raph = R;
+        handle.drag(move_crossfade, start_crossfade, up_crossfade);
+
+        newBox.draggable = 'true';
+
+        // HOVER INTERACTION
+        newBox.addEventListener("mouseover", (event) => {
+            if ( !ISPLAYBACKON ){
+                let item_index = Number(newBox.id.split(" ")[1])
+                highlightBox(item_index);
+                event.target.style["cursor"] = "pointer";
+                textlog.innerHTML="A crossfade is a smooth transition between two states of the system <br><br> CAREFUL: a crossfade has to be placed between two circles, otherwise it will be ignored! <br><br> Drag the handle to increase this crossfade's duration. <br> Drag this element on another one to put it on top of it. ";
+            } else {
+                event.target.style["cursor"] = "default";
+                textlog.innerHTML="Single element selection is disabled during playback";
+            }
+        }); 
+        // CLICK INTERACTION
+        newBox.addEventListener("click", (event) => {
+            if ( !ISPLAYBACKON ){
+                for (var i = 0; i < singlePlaybackTimeouts.length; i++) {
+                    clearTimeout(singlePlaybackTimeouts[i]);
+                }
+                for (var i = 0; i < meanderPlaybackTimeouts.length; i++) {
+                    clearTimeout(meanderPlaybackTimeouts[i]);
+                }   
+                for (var i = 0; i < crossfadePlaybackTimeouts.length; i++) {
+                    clearTimeout(crossfadePlaybackTimeouts[i]);
+                }            
+                let item_index = Number(newBox.id.split(" ")[1])
+                SELECTED_ELEMENT = item_index;
+                //highlightBox(item_index); 
+                playBox( SELECTED_ELEMENT );
+                textlog.innerHTML="A crossfade is a smooth transition between two states of the system <br><br> CAREFUL: a crossfade has to be placed between two circles, otherwise it will be ignored! <br><br> Drag the handle to increase this crossfade's duration. <br> Drag this element on another one to put it on top of it. ";
+            } else {
+                textlog.innerHTML="Single element selection is disabled during playback";
+            }
+        });
+        // DRAG AND DROP INTERACTION
+        newBox.addEventListener('dragstart', dragStart);
+        newBox.addEventListener('dragenter', dragEnter)
+        newBox.addEventListener('dragover', dragOver);
+        newBox.addEventListener('dragleave', dragLeave);
+        newBox.addEventListener('drop', drop);
+
+        var duration = pxHeightToTimesMs(newBox.clientHeight); 
+        compositionArray.push(new Crossfade(duration));
+
+        numBoxes += 1;
+        raphaels.push(R);
+    }
+    renderPath();
+}
+// CROSSFADE INTERACTIONS
+var start_crossfade = function () {
+    if ( !ISPLAYBACKON ){
+
+        this.cy = this.attr("cy");
+        this.attr({opacity: 1});
+    }
+};
+var move_crossfade = function (dx, dy) {
+    if ( !ISPLAYBACKON ){
+
+        var Y = this.cy + dy;
+        let max_r_px = timesToPxHeight( MAX_T );
+        let min_r_px = timesToPxHeight( MIN_T );
+        if ( Y < max_r_px && Y > min_r_px ) {
+            this.attr({ cy: Y });
+            this.pathArray[1][2] = Y;
+            this.path.attr({path: this.pathArray});
+            this.parentDiv.style["height"] = Y+MARGIN_PX;
+            this.raph.setSize(COMPOSITION_BAR_WIDTH_PX, Y+MARGIN_PX);
+        }
+    }
+};
+var up_crossfade = function () {
+    if ( !ISPLAYBACKON ){
+        this.attr({opacity: 0.3});
+        let compositionIndex = Number(this.parentDiv.id.split(" ")[1]);
+        compositionArray[compositionIndex].duration = pxHeightToTimesMs(this.attr("cy"));
+    }
+};
+
+
+function drawMeander(){
+    let compositionTime = calculateCurrentCompostionTime();
+    if ( compositionTime < MAX_COMPOSITION_DURATION){
+
+        let newBox = document.createElement("div");
+        newBox.id = "box "+numBoxes;
+        newBox.className = 'meander';
+        document.getElementById("composition-bar").appendChild(newBox); 
+
+        let boxStartHeight = timesToPxHeight( BASIC_ELEMENT_T );
+        var R = Raphael("box "+numBoxes, COMPOSITION_BAR_WIDTH_PX, boxStartHeight+MARGIN_PX);
+        let path1 = R.path("M"+(COMPOSITION_BAR_WIDTH_PX/2)+" 0L"+(COMPOSITION_BAR_WIDTH_PX/2+15)+" "+ (boxStartHeight/4)).attr({
+            stroke: '#FFFFFF',
+            'stroke-width': 3,
+            opacity: 0.3
+        });
+        let path2 = R.path("M"+(COMPOSITION_BAR_WIDTH_PX/2+15)+" "+(boxStartHeight/4)+"L"+(COMPOSITION_BAR_WIDTH_PX/2-15)+" "+(boxStartHeight*2/4)).attr({
+            stroke: '#FFFFFF',
+            'stroke-width': 3,
+            opacity: 0.3
+        });
+        let path3 = R.path("M"+(COMPOSITION_BAR_WIDTH_PX/2-15)+" "+(boxStartHeight*2/4)+"L"+(COMPOSITION_BAR_WIDTH_PX/2)+" "+(boxStartHeight*3/4)).attr({
+            stroke: '#FFFFFF',
+            'stroke-width': 3,
+            opacity: 0.3
+        });
+        let path4 = R.path("M"+(COMPOSITION_BAR_WIDTH_PX/2)+" "+(boxStartHeight*3/4)+"L"+(COMPOSITION_BAR_WIDTH_PX/2)+" "+boxStartHeight).attr({
+            stroke: '#FFFFFF',
+            'stroke-width': 3,
+            'arrow-end':'classic-wide-long',
+            opacity: 0.3
+        });
+
+        var pathArray1 = path1.attr("path");
+        var pathArray2 = path2.attr("path");
+        var pathArray3 = path3.attr("path");
+        var pathArray4 = path4.attr("path");
+        let handle_meander = R.circle(COMPOSITION_BAR_WIDTH_PX/2,boxStartHeight-5,10).attr({
+            fill: "#FFFFFF",
+            cursor: "pointer",
+            "stroke-width": 10,
+            stroke: "transparent",
+            opacity: 0.3
+        });
+        handle_meander.pathArray1 = pathArray1;
+        handle_meander.pathArray2 = pathArray2;
+        handle_meander.pathArray3 = pathArray3;
+        handle_meander.pathArray4 = pathArray4;
+        handle_meander.path1 = path1;
+        handle_meander.path2 = path2;
+        handle_meander.path3 = path3;
+        handle_meander.path4 = path4;
+        handle_meander.parentDiv = document.getElementById("box "+numBoxes);
+        handle_meander.raph = R;
+        handle_meander.drag(move_meander, start_meander, up_meander);
+
+        newBox.draggable = 'true';
+
+        // HOVER INTERACTION
+        newBox.addEventListener("mouseover", (event) => {
+            if ( !ISPLAYBACKON ){
+                let item_index = Number(newBox.id.split(" ")[1])
+                highlightBox(item_index);
+                event.target.style["cursor"] = "pointer";
+                textlog.innerHTML="A meander is a transition between two states of the system going through other states<br><br> CAREFUL: a meander has to be placed between two circles, otherwise it will be ignored!  <br><br> Drag the handle to increase this meander's duration. <br> Drag this element on another one to put it on top of it.";
+            } else {
+                event.target.style["cursor"] = "default";
+                textlog.innerHTML="Single element selection is disabled during playback";
+
+            }
+        }); 
+        // CLICK INTERACTION
+        newBox.addEventListener("click", (event) => {
+            if ( !ISPLAYBACKON ){
+                for (var i = 0; i < singlePlaybackTimeouts.length; i++) {
+                    clearTimeout(singlePlaybackTimeouts[i]);
+                }            
+                for (var i = 0; i < meanderPlaybackTimeouts.length; i++) {
+                    clearTimeout(meanderPlaybackTimeouts[i]);
+                }
+                for (var i = 0; i < crossfadePlaybackTimeouts.length; i++) {
+                    clearTimeout(crossfadePlaybackTimeouts[i]);
+                }            
+                let item_index = Number(newBox.id.split(" ")[1])
+                SELECTED_ELEMENT = item_index;
+                //highlightBox(item_index); 
+                playBox( SELECTED_ELEMENT );
+                textlog.innerHTML="A meander is a transition between two states of the system going through other states<br><br> CAREFUL: a meander has to be placed between two circles, otherwise it will be ignored!  <br><br> Drag the handle to increase this meander's duration. <br> Drag this element on another one to put it on top of it.";
+            } else {
+                textlog.innerHTML="Single element selection is disabled during playback";
+            }
+        }); 
+        // DRAG AND DROP INTERACTION
+        newBox.addEventListener('dragstart', dragStart);
+        newBox.addEventListener('dragenter', dragEnter)
+        newBox.addEventListener('dragover', dragOver);
+        newBox.addEventListener('dragleave', dragLeave);
+        newBox.addEventListener('drop', drop);
+
+
+        var duration = pxHeightToTimesMs(newBox.clientHeight); 
+        compositionArray.push(new Meander(duration));
+
+        numBoxes += 1;
+        raphaels.push(R);
+    }
+    renderPath();
+}
+
+
+var start_meander = function () {
+    if ( !ISPLAYBACKON ){
+        this.cy = this.attr("cy");
+        this.attr({opacity: 1});
+    }
+};
+var move_meander = function (dx, dy) {
+    if ( !ISPLAYBACKON ){
+        var Y = this.cy + dy;
+        let max_r_px = timesToPxHeight( MAX_T );
+        let min_r_px = timesToPxHeight( MIN_T );
+        if ( Y < max_r_px && Y > min_r_px ) {
+            this.attr({ cy: Y });
+            this.pathArray1[1][2] = Y/4;
+            this.pathArray2[0][2] = Y/4;
+            this.pathArray2[1][2] = Y/4*2;
+            this.pathArray3[0][2] = Y/4*2;
+            this.pathArray3[1][2] = Y/4*3;
+            this.pathArray4[0][2] = Y/4*3;
+            this.pathArray4[1][2] = Y;
+            this.path1.attr({path: this.pathArray1});
+            this.path2.attr({path: this.pathArray2});
+            this.path3.attr({path: this.pathArray3});
+            this.path4.attr({path: this.pathArray4});
+            this.parentDiv.style["height"] = Y+MARGIN_PX;
+            this.raph.setSize(COMPOSITION_BAR_WIDTH_PX, Y+MARGIN_PX);
+        }
+    }
+};
+var up_meander = function () {
+    if ( !ISPLAYBACKON ){
+        this.attr({opacity: 0.3});
+        let compositionIndex = Number(this.parentDiv.id.split(" ")[1]);
+        compositionArray[compositionIndex].duration = pxHeightToTimesMs(this.attr("cy"));
+    }
+};
+
+
+// DEMO OBJECTS (WHEN BOXES ARE EXCHANGED NEEDS TO BE EXCHANGED IN "raphaels")
+//drawBox(0, 0, 0, Math.random(), 10000);
+//drawCrossfade();
+//drawBox(0, 0, 0, Math.random(), 10000);
+//drawMeander();
+//drawBox(0, 0, 0, Math.random(), 10000);
+
+
+
+// FUNCTION FOR HIGHLIGHTING BOXES
+function highlightNone (){
+    //var hovered_on_id = Number(event.target.id.split(' ')[1]);
+    for (var i = 0; i < raphaels.length; i++) {
+        raphaels[i].forEach(function (el) 
+        {
+            el.attr({"opacity": MIN_OPACITY});
+        });
+    }
+    if ( SELECTED_ELEMENT != null ){
+        raphaels[SELECTED_ELEMENT].forEach(function (el) 
+        {
+            el.attr({"opacity": SELECTED_OPACITY});
+        });
+        var newopacities = new Float32Array( N_POINTS ).fill(0.2);
+        newopacities[compositionArray[SELECTED_ELEMENT].arrayIndex] = 1;
+        particles.geometry.attributes.opacity.array = newopacities;
+        particles.geometry.attributes.opacity.needsUpdate = true;
+
+    } else {
+        var newopacities = new Float32Array( N_POINTS ).fill(BASE_OPACITY);
+        particles.geometry.attributes.opacity.array = newopacities;
+        particles.geometry.attributes.opacity.needsUpdate = true;
+
+        for (var i = 0; i < meanderPlaybackTimeouts.length; i++) {
+            clearTimeout(meanderPlaybackTimeouts[i]);
+        }
+        for (var i = 0; i < crossfadePlaybackTimeouts.length; i++) {
+            clearTimeout(crossfadePlaybackTimeouts[i]);
+        }    
+        scene.remove(cursor);
+    
+    }
+}
+
+function highlightBox (box_n){
+    var newopacities = new Float32Array( N_POINTS ).fill(0.2);
+    
+    for (var i = 0; i < raphaels.length; i++) {
+        raphaels[i].forEach(function (el) 
+        {
+            el.attr({"opacity": MIN_OPACITY});
+        });
+    }
+    raphaels[box_n].forEach(function (el) 
+    {
+        el.attr({"opacity": HOVER_OPACITY});
+    });
+    newopacities[compositionArray[box_n].arrayIndex] = SELECTED_OPACITY;
+    if ( SELECTED_ELEMENT != null ){
+        raphaels[SELECTED_ELEMENT].forEach(function (el) 
+        {
+            el.attr({"opacity": SELECTED_OPACITY});
+        });
+
+        // highlight dot in the scatterplot
+        //var newopacities = new Float32Array( N_POINTS ).fill(0.3);
+        //var compositionIndex = Number(element.id.split(' ')[1]);
+        newopacities[compositionArray[SELECTED_ELEMENT].arrayIndex] = 1;
+    }
+    particles.geometry.attributes.opacity.array = newopacities;
+    particles.geometry.attributes.opacity.needsUpdate = true;
+
+}
+
+function highlightAll (){    
+    for (var i = 0; i < raphaels.length; i++) {
+        raphaels[i].forEach(function (el) 
+        {
+            el.attr({"opacity": HOVER_OPACITY});
+        });
+    }
+    var newopacities = new Float32Array( N_POINTS ).fill(0.2);
+    for (var i = 0; i < compositionArray.length; i++) {
+        if ( compositionArray[i] instanceof Box ){
+            newopacities[compositionArray[i].arrayIndex] = 1;
+        }
+    }
+    particles.geometry.attributes.opacity.array = newopacities;
+    particles.geometry.attributes.opacity.needsUpdate = true;
+}
+
+
+const singlePlaybackTimeouts = [];
+function loopCrossfade( box_n ){
+    sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z);
+    sendCrossfade(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z, 
+        compositionArray[box_n+1].x, compositionArray[box_n+1].y, compositionArray[box_n+1].z, 
+        compositionArray[box_n].duration / 1000);
+    animateCrossfade( compositionArray[box_n-1].x,compositionArray[box_n-1].y,compositionArray[box_n-1].z,   
+        compositionArray[box_n+1].x,compositionArray[box_n+1].y,compositionArray[box_n+1].z, 
+        compositionArray[box_n].duration );
+    var selectedBoxTimeout = setTimeout(function() {
+        if ( SELECTED_ELEMENT != null ){
+            loopCrossfade( box_n );
+        } 
+    }, compositionArray[box_n].duration );
+    singlePlaybackTimeouts.push(selectedBoxTimeout);
+}
+
+function loopMeander( box_n ){
+    sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z);
+    sendMeander(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z, 
+        compositionArray[box_n+1].x, compositionArray[box_n+1].y, compositionArray[box_n+1].z, 
+        compositionArray[box_n].duration / 1000);
+    animateMeander( compositionArray[box_n].meanderComponents, compositionArray[box_n].duration );
+    var selectedBoxTimeout = setTimeout(function() {
+        if ( SELECTED_ELEMENT != null ){
+            loopMeander( box_n );
+        } 
+    }, compositionArray[box_n].duration );
+    singlePlaybackTimeouts.push(selectedBoxTimeout);
+}
+
+function playBox( box_n ){
+    // remove cursor
+    scene.remove(cursor);
+    if ( compositionArray[box_n] instanceof Box ){
+        highlightBox( box_n );
+        sendBox( compositionArray[box_n].x, compositionArray[box_n].y, compositionArray[box_n].z );
+
+        let cursor_x = Number(compositionArray[box_n].x) * scale_x - (scale_x/2),
+            cursor_y = Number(compositionArray[box_n].y) * scale_y - (scale_y/2),
+            cursor_z = Number(compositionArray[box_n].z) * scale_z - (scale_z/2);
+        cursor = createCursor( cursor_x, cursor_y, cursor_z );
+        scene.add(cursor);
+        
+    } else if ( box_n != 0 && compositionArray[box_n] instanceof Crossfade ) {
+        // check if before and after there are boxes
+        if (compositionArray[box_n-1] instanceof Box && compositionArray[box_n+1] instanceof Box){
+            highlightBox( box_n );
+            if ( !ISPLAYBACKON ){
+                // loop the crossfade
+                loopCrossfade( box_n );
+
+            } else {
+                // play crossfade only once
+                sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z);
+                sendCrossfade(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z, 
+                    compositionArray[box_n+1].x, compositionArray[box_n+1].y, compositionArray[box_n+1].z, 
+                    compositionArray[box_n].duration / 1000);    
+                animateCrossfade( compositionArray[box_n-1].x,compositionArray[box_n-1].y,compositionArray[box_n-1].z,   
+                                compositionArray[box_n+1].x,compositionArray[box_n+1].y,compositionArray[box_n+1].z, 
+                                compositionArray[box_n].duration );
+            }    
+        } else {
+            console.log('Crossfade can only by played if it is placed between two circles');
+        }
+
+    } else if ( box_n != 0 && compositionArray[box_n] instanceof Meander ) {
+        // check if before and after there are boxes
+        if (compositionArray[box_n-1] instanceof Box && compositionArray[box_n+1] instanceof Box){
+            highlightBox( box_n );
+            if ( !ISPLAYBACKON ){
+                // loop the meander
+                loopMeander( box_n );
+                
+            } else {
+                // play meander only once
+                sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z);
+                sendMeander(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z, 
+                    compositionArray[box_n+1].x, compositionArray[box_n+1].y, compositionArray[box_n+1].z, 
+                    compositionArray[box_n].duration / 1000);
+                animateMeander( compositionArray[box_n].meanderComponents, compositionArray[box_n].duration );
+            }    
+        } else {
+            console.log('Meander can only by played if it placed is between two circles');
+        }
+    }
+}
+
+
+
+
+// INTERACTIONS AT BUTTONS
+document.getElementById("insert-crossfade").addEventListener("mouseover", (event) => {
+    if ( !ISPLAYBACKON ){
+        highlightNone(); 
+        event.target.style["cursor"] = "pointer";
+        textlog.innerHTML="insert a new crossfade";
+    } else {
+        textlog.innerHTML="you can't insert a new crossfade during playback";
+    }
+}); 
+document.getElementById("insert-crossfade").addEventListener("click", (event) => {
+    if ( !ISPLAYBACKON ){
+        SELECTED_ELEMENT = null;
+        highlightNone(); 
+        drawCrossfade();
+        textlog.innerHTML="inserting a new crossfade";
+    } else {
+        textlog.innerHTML="you can't insert a new crossfade during playback";
+    }
+}); 
+
+// INSERT MEANDER BUTTON
+document.getElementById("insert-meander").addEventListener("mouseover", (event) => {
+    if ( !ISPLAYBACKON ){    
+        highlightNone(); 
+        event.target.style["cursor"] = "pointer";
+        textlog.innerHTML="insert a new meander";
+    } else {
+        textlog.innerHTML="you can't insert a new meander during playback";
+    }
+}); 
+document.getElementById("insert-meander").addEventListener("click", (event) => {
+    if ( !ISPLAYBACKON ){
+        SELECTED_ELEMENT = null;
+        highlightNone(); 
+        drawMeander();
+        textlog.innerHTML="inserting a new meander";
+    } else {
+        textlog.innerHTML="you can't insert a new meander during playback";
+    }
+}); 
+
+// TRASH BIN BUTTON
+document.getElementById("bin").addEventListener("mouseover", (event) => {
+    if ( !ISPLAYBACKON ){
+        highlightNone(); 
+        event.target.style["cursor"] = "pointer";
+        textlog.innerHTML="delete selected element";
+    } else {
+        textlog.innerHTML="you can't delete an element during playback";
+    }
+}); 
+document.getElementById("bin").addEventListener("click", (event) => {
+    if ( !ISPLAYBACKON ){
+        if ( SELECTED_ELEMENT != null ){
+            // trash the element
+            removeElement(SELECTED_ELEMENT)
+            textlog.innerHTML="deleting selected element";
+        } else {
+            textlog.innerHTML="select an element to delete it";
+        }
+        SELECTED_ELEMENT = null;
+        highlightNone(); 
+    } else {
+        textlog.innerHTML="you can't delete an element during playback";
+    }
+}); 
+
+function removeElement(element_index){
+    
+    let element = document.getElementById('box '+ element_index)
+    let parent = element.parentNode
+    console.log('removing element: ', element);
+    // reduce number of boxes
+    element.remove();
+    numBoxes -= 1;
+    // adjust IDs of remaining boxes
+    for (var i = element_index; i < numBoxes; i++) {
+        var old_id = parent.children[i].id.split(' ');
+        old_id[1] = Number(old_id[1])-1;
+        parent.children[i].id = old_id.join(' ');
+    }
+    if (compositionArray[element_index] instanceof Box){
+        pointToBasic(compositionArray[element_index].arrayIndex);
+        // remove scatterplot element
+    }
+    // remove item from composition array
+    //let comp_index = Number(id_draggable.split(' ')[1]);
+    compositionArray.splice(element_index, 1);
+    // remove raphael item from canvas array
+    raphaels.splice(element_index, 1);
+    console.log("composition: ", compositionArray);
+    // update visualization
+    renderPath();
+
+}
+
+// PLAY BUTTON
+document.getElementById("play").addEventListener("mouseover", (event) => {
+    if ( !ISPLAYBACKON ){
+        highlightAll(); 
+        event.target.style["cursor"] = "pointer";
+        textlog.innerHTML="play the composition";
+    } else {
+        textlog.innerHTML="you can't play again during playback";
+    }
+}); 
+document.getElementById("play").addEventListener("click", (event) => {
+    if ( !ISPLAYBACKON ){
+        highlightNone(); 
+        SELECTED_ELEMENT = null;
+        play();
+        textlog.innerHTML="playing the composition";
+    } else {
+        textlog.innerHTML="you can't play again during playback";
+    }
+}); 
+
+var play = function(){
+    var timeout = 0;
+    ISPLAYBACKON = true;
+    disableAllInteractions();
+    console.log("playing composition: ", compositionArray);
+    for (let i = 0; i < compositionArray.length; i++) {
+        let newtimeout = setTimeout(function() {
+            if( ISPLAYBACKON ){
+                console.log('playing: ',compositionArray[i]);
+                SELECTED_ELEMENT = i;
+                //highlightBox(i);
+                playBox(i);
+                //sendBox(compositionArray[i].x, compositionArray[i].y);
+                //highlightBoxElement(document.getElementById('box '+i)); 
+            }
+        }, timeout);
+        timeout += (compositionArray[i].duration );
+        QUEUED_TIMEOUTS.push(newtimeout);
+        //console.log(timeout);
+    }
+    let newtimeout = setTimeout(function() {
+        if( ISPLAYBACKON ){
+            console.log('End of composition');
+            stopPlayback();
+        }
+    }, timeout+100);
+    QUEUED_TIMEOUTS.push(newtimeout);
+};
+
+function disableAllInteractions(){
+    document.getElementById("insert-crossfade").disabled = true;
+    document.getElementById("insert-meander").disabled = true;
+    document.getElementById("bin").disabled = true;
+    document.getElementById("play").disabled = true;
+    document.getElementById("record").disabled = true;
+    document.getElementById("download").disabled = true;
+
+    for (var i = 0; i < numBoxes; i++) {
+        let thisbox = document.getElementById("box "+i);
+        thisbox.draggable = false;
+    }
+    for (var i = 0; i < singlePlaybackTimeouts.length; i++) {
+        clearTimeout(singlePlaybackTimeouts[i]);
+    }
+    for (var i = 0; i < meanderPlaybackTimeouts.length; i++) {
+        clearTimeout(meanderPlaybackTimeouts[i]);
+    }
+    for (var i = 0; i < crossfadePlaybackTimeouts.length; i++) {
+        clearTimeout(crossfadePlaybackTimeouts[i]);
+    }
+}
+
+// STOP BUTTON
+document.getElementById("stop").addEventListener("mouseover", (event) => {
+    highlightNone(); 
+    event.target.style["cursor"] = "pointer";
+    textlog.innerHTML="stop playback or recording";
+}); 
+document.getElementById("stop").addEventListener("click", (event) => {
+    highlightNone(); 
+    SELECTED_ELEMENT = null;
+    stopPlayback();
+    textlog.innerHTML="stopping playback or recording";
+}); 
+
+var stopPlayback = function(){
+    console.log("stopped composition playback");
+    for (var i = 0; i < QUEUED_TIMEOUTS.length; i++) {
+        clearTimeout(QUEUED_TIMEOUTS[i]);
+    }
+    for (var i = 0; i < singlePlaybackTimeouts.length; i++) {
+        clearTimeout(singlePlaybackTimeouts[i]);
+    }
+    for (var i = 0; i < meanderPlaybackTimeouts.length; i++) {
+        clearTimeout(meanderPlaybackTimeouts[i]);
+    }
+    for (var i = 0; i < crossfadePlaybackTimeouts.length; i++) {
+        clearTimeout(crossfadePlaybackTimeouts[i]);
+    }
+    //sendStop();
+    SELECTED_ELEMENT = null;
+    ISPLAYBACKON = false;
+    if ( ISRECORDING ){
+        console.log('Stopping recording, file saved to disk');
+        sendStoprecording();
+        ISRECORDING = false;
+        clearTimeout(stoprecordingtimeout);
+    }
+    highlightNone();
+    enableAllInteractions();
+    sendStop();
+}
+function enableAllInteractions(){
+    document.getElementById("insert-crossfade").disabled = false;
+    document.getElementById("insert-meander").disabled = false;
+    document.getElementById("bin").disabled = false;
+    document.getElementById("play").disabled = false;
+    document.getElementById("record").disabled = false;
+    document.getElementById("download").disabled = false;
+    for (var i = 0; i < numBoxes; i++) {
+        let thisbox = document.getElementById("box "+i);
+        thisbox.draggable = true;
+    }
+}
+
+// RECORD BUTTON
+let ISRECORDING = false;
+let stoprecordingtimeout = undefined;
+document.getElementById("record").addEventListener("mouseover", (event) => {
+    if ( !ISPLAYBACKON ){
+        highlightAll(); 
+        event.target.style["cursor"] = "pointer";
+        textlog.innerHTML="Record the whole composition.";
+    } else {
+        textlog.innerHTML="You can't record during playback.";
+    }
+}); 
+document.getElementById("record").addEventListener("click", (event) => {
+    if ( !ISPLAYBACKON ){
+        highlightNone(); 
+        SELECTED_ELEMENT = null;
+        console.log('Starting recording');
+        sendStartrecording();
+        play();
+        ISRECORDING = true;
+        let maxrecordingduration = calculateCurrentCompostionTime();
+        stoprecordingtimeout = setTimeout(function() {
+            if( ISRECORDING ){
+                console.log('Stopping recording, file saved to disk');
+                sendStoprecording();
+                ISRECORDING = false;
+            }
+        }, maxrecordingduration+100);
+        textlog.innerHTML="Recording the composition.";
+    } else {
+        textlog.innerHTML="You can't record during playback.";
+    }
+}); 
+
+// DOWNLOAD BUTTON
+document.getElementById("download").addEventListener("mouseover", (event) => {
+    if ( !ISPLAYBACKON ){
+        highlightNone(); 
+        event.target.style["cursor"] = "pointer";
+        textlog.innerHTML="Download the composition as a JSON file.";
+    } else {
+        textlog.innerHTML="You can't download during playback.";
+    }
+}); 
+document.getElementById("download").addEventListener("click", (event) => {
+    if ( !ISPLAYBACKON ){
+        highlightNone(); 
+        SELECTED_ELEMENT = null;
+        //play();
+        const myFile = new File([JSON.stringify(compositionArray, null, 2)], 'benjolin-composition.json');
+        //console.log(JSON.stringify(compositionArray));
+
+        // Create a link and set the URL using `createObjectURL`
+        const link = document.createElement('a');
+        link.style.display = 'none';
+        link.href = URL.createObjectURL(myFile);
+        link.download = myFile.name;
+
+        // It needs to be added to the DOM so it can be clicked
+        document.body.appendChild(link);
+        link.click();
+
+        // To make this work on Firefox we need to wait
+        // a little while before removing it.
+        setTimeout(() => {
+            URL.revokeObjectURL(link.href);
+            link.parentNode.removeChild(link);
+        }, 0);
+        textlog.innerHTML="Downloading the composition as a JSON file.";
+    } else {
+        textlog.innerHTML="You can't download during playback.";
+    }
+}); 
+
+
+
+// SCATTERPLOT HOVER
+document.getElementById("scatterPlot").addEventListener("mouseover", (event) => {
+    highlightNone(); 
+    if ( SELECTED_ELEMENT != null ){
+        if ( !ISPLAYBACKON ){
+            textlog.innerHTML="An object is selected. Click anywhere to go back to exploration.";
+        }
+    }
+    else {
+        textlog.innerHTML="Explore the cloud to listen to the different states of the system. <br> Click on a point to add the corresponding state to the composition bar. ";
+    }
+}); 
+
+let canClick = false;
+let mouseMoved = false;
+var downListener = function(){
+    mouseMoved = false;
+}
+var moveListener = function(){
+    mouseMoved = true;
+}
+var upListener = function(){
+    if ( mouseMoved ){
+        // drag
+        if ( !ISPLAYBACKON ){
+            if ( SELECTED_ELEMENT != null ){
+                textlog.innerHTML="An object is selected. Click anywhere to go back to exploration.";
+            } else {
+                textlog.innerHTML="Explore the cloud to listen to the different states of the system. <br> Click on a point to add the corresponding state to the composition bar. ";
+            }
+        } else {
+            textlog.innerHTML="Selection is disabled during playback.";
+        }
+    } else {
+        if ( !ISPLAYBACKON ){
+            // click
+            if ( SELECTED_ELEMENT != null ){
+                // disable listening to previous point
+                SELECTED_ELEMENT = null;
+                highlightNone(); 
+                sendStop();
+                textlog.innerHTML="An object is selected. Click anywhere to go back to exploration.";
+                
+            } else {
+                // you can select a new point when there is no selected point already
+                canClick = true;
+            }
+        }
+    }
+}
+document.getElementById("scatterPlot").addEventListener("mousedown", downListener);
+document.getElementById("scatterPlot").addEventListener("mousemove", moveListener);
+document.getElementById("scatterPlot").addEventListener("mouseup", upListener);
+
+
+// SCATTERPLOT CLICK
+//document.getElementById("scatterPlot").addEventListener("click", (event) => {
+    // distinguish click from dragging
+//    SELECTED_ELEMENT = null;
+//    highlightNone(event); 
+//});
+
+
+// dragging and dropping boxes
+function dragStart(e) {
+    //console.log("dragging: ", e.target.id);
+    e.dataTransfer.setData('text/plain', e.target.id);
+    event.target.style["cursor"] = "grabbing";
+    textlog.innerHTML="dragging element. release it on another one to put this one on top of it in the compostion bar";
+}
+
+function dragEnter(e) {
+    e.preventDefault();
+    let entered_box_n = null;
+    if ( e.target.nodeName == 'DIV' ){
+        entered_box_n = Number(e.target.id.split(" ")[1]);
+    } else if ( e.target.nodeName == 'svg' ){
+        entered_box_n = Number(e.target.parentElement.id.split(" ")[1]);
+    } else {
+        entered_box_n = Number(e.target.parentElement.parentElement.id.split(" ")[1]);
+    }
+    //console.log("entering: box ", entered_box_n);
+
+    if ( entered_box_n != null ){
+        raphaels[entered_box_n].forEach(function (el) 
+        {
+            el.attr({"opacity": 1});
+        });
+    }
+    event.target.style["cursor"] = "grabbing";
+    //e.target.classList.add('drag-over');
+}
+function dragOver(e) {
+    e.preventDefault();
+    let entered_box_n = null;
+    if ( e.target.nodeName == 'DIV' ){
+        entered_box_n = Number(e.target.id.split(" ")[1]);
+    } else if ( e.target.nodeName == 'svg' ){
+        entered_box_n = Number(e.target.parentElement.id.split(" ")[1]);
+    } else {
+        entered_box_n = Number(e.target.parentElement.parentElement.id.split(" ")[1]);
+    }
+    //console.log("over: box ", entered_box_n);
+
+    if ( entered_box_n != null ){
+        raphaels[entered_box_n].forEach(function (el) 
+        {
+            el.attr({"opacity": 1});
+        });
+    }
+    event.target.style["cursor"] = "pointer";
+    //e.target.classList.add('drag-over');
+
+}
+function dragLeave(e) {
+    //e.target.classList.remove('drag-over');
+    e.preventDefault();
+    let left_box_n = null;
+    if ( e.target.nodeName == 'DIV' ){
+        left_box_n = Number(e.target.id.split(" ")[1]);
+    } else if ( e.target.nodeName == 'svg' ){
+        left_box_n = Number(e.target.parentElement.id.split(" ")[1]);
+    } else {
+        left_box_n = Number(e.target.parentElement.parentElement.id.split(" ")[1]);
+    }
+
+    //console.log("left: box ", left_box_n);
+
+    if ( left_box_n != null ){
+        raphaels[left_box_n].forEach(function (el) 
+        {
+            el.attr({"opacity": 0.3});
+        });   
+    }
+    event.target.style["cursor"] = "default";
+
+}
+
+ function drop(e) {
+
+    // get the id of the event target
+    let index_target = null;
+    if ( e.target.nodeName == 'DIV' ){
+        index_target = Number(e.target.id.split(" ")[1]);
+    } else if ( e.target.nodeName == 'svg' ){
+        index_target = Number(e.target.parentElement.id.split(" ")[1]);
+    } else {
+        index_target = Number(e.target.parentElement.parentElement.id.split(" ")[1]);
+    }
+    if ( index_target != null ){
+        raphaels[index_target].forEach(function (el) 
+        {
+            el.attr({"opacity": 0.3});
+        });   
+    }
+    event.target.style["cursor"] = "default";
+
+    // get the draggable element
+    let id = e.dataTransfer.getData('text/plain');
+    let draggable = document.getElementById(id);
+
+    // get box indices
+    let index_draggable = Number(id.split(' ')[1]);
+    //let index_target = Number(e.target.id.split(' ')[1]);
+    var draggable_x = null;
+    var draggable_y = null;
+    var target_x = null;
+    var target_y = null;
+
+    if (index_draggable != index_target){
+        
+        // locate boxes to prepend
+        let draggable_node = document.getElementById("box "+index_draggable);
+        let target_node = document.getElementById("box "+index_target);
+        console.log('prepending box '+ index_draggable + ' on top of box '+ index_target);
+        let parent = document.getElementById("composition-bar");
+        
+        // prepend boxes
+        prependElement(draggable_node, target_node);
+        var compositionElementDraggable = compositionArray[index_draggable];
+        var raphaelDraggable = raphaels[index_draggable];
+        if (index_draggable > index_target) { 
+            compositionArray.splice(index_draggable, 1);
+            compositionArray.splice(index_target, 0, compositionElementDraggable);
+    
+            raphaels.splice(index_draggable, 1);
+            raphaels.splice(index_target, 0, raphaelDraggable);    
+        } else {
+            compositionArray.splice(index_target, 0, compositionElementDraggable);
+            compositionArray.splice(index_draggable, 1);
+    
+            raphaels.splice(index_target, 0, raphaelDraggable);    
+            raphaels.splice(index_draggable, 1);
+
+        }
+
+        // correct ids
+        for ( let i = 0; i < parent.children.length; i++ ) {
+            let node = parent.children[i];
+            node.id = 'box ' + (i);    
+        }
+
+        /*
+        let new_draggable_node = document.getElementById('box '+ (index_draggable)); 
+        new_draggable_node.id = 'box ' + (index_target);
+        for ( let i = index_target+1; i < parent.children.length; i++ ) {
+            let node = parent.children[i];
+            node.id = 'box ' + (i);    
+            console.log(i);
+        }*/
+
+        //[compositionArray[index_draggable], compositionArray[index_target]] = [compositionArray[index_target], compositionArray[index_draggable]];
+        //[raphaels[index_draggable], raphaels[index_target]] = [raphaels[index_target], raphaels[index_draggable]];
+
+        // correct ids
+        //let new_target_node = document.getElementById('box '+ (index_target));
+        //let new_draggable_node = document.getElementById('box '+ (index_draggable)); 
+        //new_target_node.id = 'box ' + (index_draggable);
+        //new_draggable_node.id = 'box ' + (index_target);
+
+    }
+    renderPath();
+    // update scatterplot representation
+}
+
+function prependElement( element1, element2 ){
+
+    var clonedElement1 = element1.cloneNode(true);
+    var clonedElement2 = element2.cloneNode(true);
+    element2.parentNode.replaceChild(clonedElement1, element1);
+    element2.parentNode.replaceChild(clonedElement2, element2);
+    clonedElement2.parentNode.insertBefore( element1, clonedElement2 );
+    clonedElement2.parentNode.replaceChild( element2, clonedElement2 );
+    clonedElement1.remove();
+
+}
+
+// exchange boxes
+function exchangeElements(element1, element2){
+
+    clonedElement2.parentNode.replaceChild( element1, clonedElement1 );
+    clonedElement2.parentNode.replaceChild( element2, clonedElement2 );
+    element2.parentNode.replaceChild(clonedElement1, element2);
+    element1.parentNode.replaceChild(clonedElement2, element1);
+    clonedElement1.parentNode.replaceChild(element1, clonedElement1);
+    clonedElement2.parentNode.replaceChild(element2, clonedElement2);
+}
+
+
+
+// BOX EXCHANGE     DONE
+// WINDOW SIZE UPDATE       DONE
+// CLICK ON POINT CLOUD --> CREATE BOX      DONE
+// BUTTONS: CREATE CROSSFADE, CREATE MEANDER, CLICK ON BIN      DONE
+// OSC COMMUNICATION
+// HOVER FOR A LONG TIME INCREASES VOLUME AND BIGGER POINTER
+// BUTTONS: PLAY AND STOP       DONE
+// LOGIC WITH LONG AND SHORT TERM PLAY FUNCTIONS        DONE
+// RENDER 
+// FIX POSITION OF TIMELINE, SCATTERPLOT AND COMMANDS WHEN COMPOSTION BAR GOES DOWN (scroll bar only inside composition bar)
+// SAVE SOUND FILE RECODING AND COMPOSITION ARRAY (JSON) WITH WEBPD 
+// LIVE SOUND SCOPE WOULD BE AWESOME
+
+/* FOR WEBPAGE: 
+- SWITCHABLE EXAMPLES OF SMALL COMPOSITIONS
+- PANE TO CHECK BENJOLIN PARAMETERS (AND MANIPULATE?)
+- CREDITS AND LINKS
+- CONSOLE FOR MESSAGES?
+*/
+
+
+
+
 import * as THREE from 'three';
 import Stats from 'three/addons/libs/stats.module.js';
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@5/+esm";
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-/* 
-todo:
-- squares or circles in composition bar? Transparent background and minimal timeline, floating command options
-- implement exploration/composition MODES button (CHECK WITH SUPERVISORS)
-    - exploration highlights points in the scatterplot without adding a box (when a new point is highlighted the old one is de-highlighted)
-    - composition mode allows to add boxes. When swithcing from composition to exploration the boxes already created are left where they are
-- play button colored while playing
-- establishing discrete times and limit composition bar (max and min resize), fix time scales
-- render arrows instead of lines
-- highlighting by changing line opacity
-
-logic: 
-- you can't click on point if it's the last one being clicked
-- you can't create any more elements if limit has been reached
-- if it's playing, clicking anywhere stops the playing OR disable all functions until playing stops
-
-bugs: 
-- BUG: clicking play and stop many times will still send all OSC messages!!
-- BUG: same is true for click on multiple objects fast. If you clicked on one object and then on another one, 
-    the stop message of the previous object will still stop the next one (find a way to avoid sending these messages, maybe with this.)
-- what's the problem with meander code?
-- what does the stop button do?
-- why do I need to send two messages for them to work? -- probably a python thing
-*/
-
 // VISUALIZATION PROPERTIES
 const scale_x = 100;
 const scale_y = 200;
 const scale_z = 300;
+const CAMERA_POSITION = 1500;
 
-// BASIC PROPERTIES
-const BASE_COLOR = 0xffffff;
-const BASE_SIZE = 0.1;
 const BASE_OPACITY = 0.7;
 
 // DATA
@@ -50,6 +1268,7 @@ let raycaster, intersects;
 let pointer, INTERSECTED;
 
 const PARTICLE_SIZE = 15;
+const BIGPARTICLE_SIZE = PARTICLE_SIZE * BASIC_ELEMENT_T * TIME_TO_POINTSIZE;
 
 init();
 
@@ -59,13 +1278,13 @@ function init() {
     scene = new THREE.Scene();
 
     // CAMERA
-    camera = new THREE.PerspectiveCamera( 45, document.getElementById("scatterPlot").offsetWidth / document.getElementById("scatterPlot").offsetHeight , 1, 10000 );
-    camera.position.z = 1500;
+    camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight , 1, 10000 );
+    camera.position.z = CAMERA_POSITION;
 
     // RENDERER
     renderer = new THREE.WebGLRenderer();
     renderer.setPixelRatio( window.devicePixelRatio );
-    renderer.setSize( document.getElementById("scatterPlot").offsetWidth, document.getElementById("scatterPlot").offsetHeight );
+    renderer.setSize( window.innerWidth, window.innerHeight );
     renderer.setAnimationLoop( animate );
     document.getElementById( 'scatterPlot' ).prepend( renderer.domElement );
 
@@ -92,20 +1311,16 @@ function init() {
 	const vertices = [];
     const opacities = new Float32Array( N_POINTS );
 	for ( let i = 0; i < N_POINTS; i ++ ) {
+
         let this_x = x[i] * scale_x - (scale_x/2);
         let this_y = y[i] * scale_y - (scale_y/2);
         let this_z = z[i] * scale_z - (scale_z/2);
 		vertices.push( this_x, this_y, this_z);
-
-        //const vx = Math.random();
-        //const vy = Math.random();
-        //const vz = Math.random();
-        //color.setRGB( vx, vy, vz );
         color.setRGB( 255, 0, 0 );
-
         colors.push( color.r, color.g, color.b );
         sizes[i] = PARTICLE_SIZE;
         opacities[i] = BASE_OPACITY;
+
 	}
 	geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
     geometry.setAttribute( 'customColor', new THREE.Float32BufferAttribute( colors, 3 ) );
@@ -150,9 +1365,9 @@ function onPointerMove( event ) {
 }
 // UPDATE WINDOW SIZE
 function onWindowResize() {
-    camera.aspect = document.getElementById("scatterPlot").offsetWidth / document.getElementById("scatterPlot").offsetHeight;
+    camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize( document.getElementById("scatterPlot").offsetWidth , document.getElementById("scatterPlot").offsetHeight * 0.85 );
+    renderer.setSize( window.innerWidth-10 , window.innerHeight-10 );
 }
 // ANIMATE FOR CAMERA NAVIGATION
 function animate() {
@@ -162,16 +1377,22 @@ function animate() {
 // RENDER FUNCTION FOR ANIMATION
 function render() {
     const time = Date.now() * 0.5;
-    if ( !ISPLAYBACKON && !ISLONGPLAYBACKON && MOUSEONSCATTERPLOT){
-        pickHelper.pick(pickPosition, scene, camera, time);
-        if (isMouseDown){ // check for click and not drag
-            setTimeout(function(){ if ( !isMouseDown && timer < 500){ pickHelper.click(pickPosition, scene, camera, time); }}, 5);
-        }
+
+    if ( SELECTED_ELEMENT == null ){
+	    pickHelper.pick(pickPosition, scene, camera, time);
+	    if ( canClick ){ // check for click and not drag
+	        pickHelper.click(pickPosition, scene, camera, time);
+	        canClick = false;
+	    }
     }
+    // PICKED INDEX DISAPPEARS WHEN OUT OF SCATTERPLOT
     if ( !MOUSEONSCATTERPLOT ){
-        pointToBasic(CURRENTPICKEDINDEX)
+        pointToBasic(CURRENTPICKEDINDEX);
         CURRENTPICKEDINDEX = null;
     }
+
+    // CURSOR ANIMATION 
+    //updateCursor();
     renderer.render( scene, camera );
 }
 
@@ -191,7 +1412,13 @@ class PickHelper {
     }
     pick(normalizedPosition, scene, camera, time) {
         // restore the color if there is a picked object
-        if (this.pickedObject) {
+        if ( !clickedIndices.includes(CURRENTPICKEDINDEX) ) {
+            pointToBasic(CURRENTPICKEDINDEX);
+            this.pickedObject = undefined;
+            this.pickedObjectIndex = undefined;
+        }
+        
+        /*if (this.pickedObject) {
             if ( !clickedIndices.includes(this.pickedObjectIndex) ) {
                 particles.geometry.attributes.size.array[ this.pickedObjectIndex ] = PARTICLE_SIZE;
                 particles.geometry.attributes.opacity.array[ this.clickedObjectIndex ] = BASE_OPACITY;
@@ -203,18 +1430,18 @@ class PickHelper {
             }
             this.pickedObject = undefined;
             this.pickedObjectIndex = undefined;
-            CURRENTPICKEDINDEX = this.pickedObjectIndex;
-        }
+        }*/
         // cast a ray through the frustum
         this.raycaster.setFromCamera(normalizedPosition, camera);
         // get the list of objects the ray intersected
         const intersectedObjects = this.raycaster.intersectObjects(scene.children);
+
         if (intersectedObjects.length) {
             // pick the first object. It's the closest one
             this.pickedObject = intersectedObjects[0].object;
             this.pickedObjectIndex = intersectedObjects[0].index;
             if ( !clickedIndices.includes(this.pickedObjectIndex) ){
-                particles.geometry.attributes.size.array[ this.pickedObjectIndex ] = PARTICLE_SIZE * 20;
+                particles.geometry.attributes.size.array[ this.pickedObjectIndex ] = BIGPARTICLE_SIZE;
                 particles.geometry.attributes.size.needsUpdate = true;
                 // update opacity
                 particles.geometry.attributes.opacity.array[ this.clickedObjectIndex ] = 1;
@@ -226,11 +1453,14 @@ class PickHelper {
                 particles.geometry.attributes.customColor.array[ this.pickedObjectIndex * 3 + 1 ] = newcolor.g;
                 particles.geometry.attributes.customColor.array[ this.pickedObjectIndex * 3 + 2 ] = newcolor.b;
                 particles.geometry.attributes.customColor.needsUpdate = true;
-                //material.needsUpdate = true*/
+                //material.needsUpdate = true
             }
             //console.log("picked ID: "+intersectedObjects[0].index);
-            sendBox(x[this.pickedObjectIndex], y[this.pickedObjectIndex]);
+            sendBox(x[this.pickedObjectIndex], y[this.pickedObjectIndex], z[this.pickedObjectIndex]);
+        } else {
+            sendStop();
         }
+        CURRENTPICKEDINDEX = this.pickedObjectIndex;
     }
     click(normalizedPosition, scene, camera, time) {
         // restore the color if there is a picked object
@@ -243,192 +1473,55 @@ class PickHelper {
         // get the list of objects the ray intersected
         const intersectedObjects = this.raycaster.intersectObjects(scene.children);
         if (intersectedObjects.length) {
-            if (intersectedObjects[0].index != this.clickedObjectIndex){
+            if ( intersectedObjects[0].index != this.clickedObjectIndex ){
                 let compositionTime = calculateCurrentCompostionTime();
-                if ( compositionTime < MAX_COMPOSITION_TIME){
+                if ( compositionTime < MAX_COMPOSITION_DURATION){
                     
                     // click the first object. It's the closest one            
                     this.clickedObject = intersectedObjects[0].object;
                     this.clickedObjectIndex = intersectedObjects[0].index;
                     clickedIndices.push(this.clickedObjectIndex);
                     // update size
-                    particles.geometry.attributes.size.array[ this.clickedObjectIndex ] = PARTICLE_SIZE * 20;
+                    particles.geometry.attributes.size.array[ this.clickedObjectIndex ] = BIGPARTICLE_SIZE;
                     particles.geometry.attributes.size.needsUpdate = true;
                     // update opacity
                     particles.geometry.attributes.opacity.array[ this.clickedObjectIndex ] = 1;
                     particles.geometry.attributes.opacity.needsUpdate = true;
                     // update color
                     let newcolor = new THREE.Color();
-                    newcolor.setRGB( Math.random(), Math.random(), Math.random() );
+                    let newHueValue = Math.random();
+                    let newRGBvalues = colorHsbToRgb( newHueValue*360, 0.9*100, 0.9*100 );
+                    newcolor.setRGB( newRGBvalues[0]/255, newRGBvalues[1]/255, newRGBvalues[2]/255 );
                     particles.geometry.attributes.customColor.array[ this.clickedObjectIndex * 3 ] = newcolor.r;
                     particles.geometry.attributes.customColor.array[ this.clickedObjectIndex * 3 + 1 ] = newcolor.g;
                     particles.geometry.attributes.customColor.array[ this.clickedObjectIndex * 3 + 2 ] = newcolor.b;
                     particles.geometry.attributes.customColor.needsUpdate = true;
-                    material.needsUpdate = true
+                    material.needsUpdate = true;
                     console.log("clicked ID: "+intersectedObjects[0].index);
 
-                    addBox(x[ this.clickedObjectIndex ], y[ this.clickedObjectIndex ], z[ this.clickedObjectIndex ], 
-                        newcolor.getHexString(), this.clickedObjectIndex); 
-                    renderPath()
-                }
-                //console.log(pts);
-            }
-        }
-    }
-}
-
-// RENDERING FUNCTIONS
-function pointToBasic(pointIndex){
-    // restore point rendering to the basic properties
-    // update size
-    particles.geometry.attributes.size.array[ pointIndex ] = PARTICLE_SIZE;
-    particles.geometry.attributes.size.needsUpdate = true;
-    // update color
-    let newcolor = new THREE.Color();
-    newcolor.setRGB( 255, 0, 0 );
-    particles.geometry.attributes.customColor.array[ pointIndex * 3 ] = newcolor.r;
-    particles.geometry.attributes.customColor.array[ pointIndex * 3 + 1 ] = newcolor.g;
-    particles.geometry.attributes.customColor.array[ pointIndex * 3 + 2 ] = newcolor.b;
-    particles.geometry.attributes.customColor.needsUpdate = true;
-    material.needsUpdate = true
-}
-
-// RENDERING FUNCTIONS
-function pointHighlighted(pointIndex){
-    // restore point rendering to the basic properties
-    // update size
-    particles.geometry.attributes.size.array[ pointIndex ] = PARTICLE_SIZE;
-    particles.geometry.attributes.size.needsUpdate = true;
-    // update color
-    let newcolor = new THREE.Color();
-    newcolor.setRGB( 255, 0, 0 );
-    particles.geometry.attributes.customColor.array[ pointIndex * 3 ] = newcolor.r;
-    particles.geometry.attributes.customColor.array[ pointIndex * 3 + 1 ] = newcolor.g;
-    particles.geometry.attributes.customColor.array[ pointIndex * 3 + 2 ] = newcolor.b;
-    particles.geometry.attributes.customColor.needsUpdate = true;
-    material.needsUpdate = true
-}
-
-
-let arrowsIDs = []
-// RENDER PATH
-function renderPath(){
-    let countMeanders = 0;
-    arrowsIDs = [];
-    console.log(MEANDERS_LIST);
-    //MEANDERS_LIST = [];
-
-    //meanders = [];
-    // remove all previous arrows
-    for (let i = 0; i < arrowsIDs.length; i++) {
-        var selectedObject = scene.getObjectByName(arrowsIDs[i]);
-        scene.remove( selectedObject );
-    }
-    // draw new arrows
-    for (let i = 0; i < compositionArray.length; i++) {
-        if (i !=0){ // check if not on the first object
-            if (compositionArray[i] instanceof Meander){
-                // check if before and after there are boxes
-                if (compositionArray[i-1] instanceof Box && compositionArray[i+1] instanceof Box){ 
-                    countMeanders += 1;
-                    // add dotted line if meander
-                    //x: [compositionArray[i-1].x,compositionArray[i+1].x],
-                    //y: [compositionArray[i-1].y,compositionArray[i+1].y],
-                    let linepoints = [];
-                    
-                    sendDrawMeander( compositionArray[i-1].x,compositionArray[i-1].y,
-                                    compositionArray[i+1].x,compositionArray[i+1].y );
-                    /*let thismeander = MEANDERS_LIST[0];
-                    console.log(thismeander);
-                    for (let i = 0; i < thismeander.length; i++) {
-                        let x1 = x[parseFloat(thismeander[i])] * scale_x - (scale_x/2),
-                            y1 = y[parseFloat(thismeander[i])] * scale_y - (scale_y/2),
-                            z1 = z[parseFloat(thismeander[i])] * scale_z - (scale_z/2);
-                            linepoints.push( new THREE.Vector3( x1,y1,z1 )); 
-                    }*/
-                    let x1 = compositionArray[i-1].x * scale_x - (scale_x/2),
-                        y1 = compositionArray[i-1].y * scale_y - (scale_y/2),
-                        z1 = compositionArray[i-1].z * scale_z - (scale_z/2);
-                    let x2 = compositionArray[i+1].x * scale_x - (scale_x/2),
-                        y2 = compositionArray[i+1].y * scale_y - (scale_y/2),
-                        z2 = compositionArray[i+1].z * scale_z - (scale_z/2);
-                    linepoints.push( new THREE.Vector3( x1,y1,z1 )); 
-                    linepoints.push( new THREE.Vector3( x2,y2,z2 )); 
-
-                    let linegeometry = new THREE.BufferGeometry().setFromPoints( linepoints );
-                    let linematerial = new THREE.LineDashedMaterial( {  color: 0xffaa0, dashSize: 3, gapSize: 1, opacity: 0.1 } );
-                    let line = new THREE.Line( linegeometry, linematerial );
-                    line.computeLineDistances();
-                    //let line = customArrow(x1,y1,z1,x2,y2,z2, 10, 0x0000ff);
-                    let line_name = "meander "+compositionArray[i-1].arrayIndex+' '+compositionArray[i+1].arrayIndex;
-                    line.name = line_name;
-                    arrowsIDs.push(line_name);
-                    scene.add( line );
-                }
-            }
-            if (compositionArray[i] instanceof Crossfade){
-                // check if before and after there are boxes
-                if (compositionArray[i-1] instanceof Box && compositionArray[i+1] instanceof Box){ 
-                    // add dashed line if crossfade
-                    //x: [compositionArray[i-1].x,compositionArray[i+1].x],
-                    //y: [compositionArray[i-1].y,compositionArray[i+1].y],
-                    let linepoints = [];
-                    let x1 = compositionArray[i-1].x * scale_x - (scale_x/2),
-                        y1 = compositionArray[i-1].y * scale_y - (scale_y/2),
-                        z1 = compositionArray[i-1].z * scale_z - (scale_z/2);
-                    let x2 = compositionArray[i+1].x * scale_x - (scale_x/2),
-                        y2 = compositionArray[i+1].y * scale_y - (scale_y/2),
-                        z2 = compositionArray[i+1].z * scale_z - (scale_z/2);
-                    linepoints.push( new THREE.Vector3( x1,y1,z1 )); 
-                    linepoints.push( new THREE.Vector3( x2,y2,z2 )); 
-                    let linegeometry = new THREE.BufferGeometry().setFromPoints( linepoints );
-                    let linematerial = new THREE.LineDashedMaterial( {  color: 0xffffff, dashSize: 1, gapSize: 0.5, opacity: 0.1 } );
-                    let line = new THREE.Line( linegeometry, linematerial );
-                    line.computeLineDistances();
-                    //let line = customArrow(x1,y1,z1,x2,y2,z2, 10, 0x0000ff);
-                    let line_name = "crossfade "+compositionArray[i-1].arrayIndex+' '+compositionArray[i+1].arrayIndex;
-                    line.name = line_name;
-                    arrowsIDs.push(line_name);
-                    scene.add( line );
-                }
-            }
-            if (compositionArray[i] instanceof Box){
-                // check if before there is a box
-                if (compositionArray[i-1] instanceof Box){ 
-                    // add straight line if jump
-                    //x: [compositionArray[i-1].x,compositionArray[i+1].x],
-                    //y: [compositionArray[i-1].y,compositionArray[i+1].y],
-                    let linepoints = [];
-                    let x1 = compositionArray[i-1].x * scale_x - (scale_x/2),
-                        y1 = compositionArray[i-1].y * scale_y - (scale_y/2),
-                        z1 = compositionArray[i-1].z * scale_z - (scale_z/2);
-                    let x2 = compositionArray[i].x * scale_x - (scale_x/2),
-                        y2 = compositionArray[i].y * scale_y - (scale_y/2),
-                        z2 = compositionArray[i].z * scale_z - (scale_z/2);
-                    linepoints.push( new THREE.Vector3( x1,y1,z1 )); 
-                    linepoints.push( new THREE.Vector3( x2,y2,z2 )); 
-                    let linegeometry = new THREE.BufferGeometry().setFromPoints( linepoints );
-                    let linematerial = new THREE.LineBasicMaterial( { color: 0x0000ff, linewidth: 10, opacity: 0.1} );
-                    let line = new THREE.Line( linegeometry, linematerial );
-                    let line_name = "jump "+compositionArray[i-1].arrayIndex+' '+compositionArray[i].arrayIndex;
-                    line.name = line_name;
-                    arrowsIDs.push(line_name);
-                    scene.add( line );
-
-                    //var to = new THREE.Vector3( x2, y2, z2 );
-                    //var from = new THREE.Vector3( x1, y1, z1 );
-                    //var direction = to.clone().sub(from);
-                    //var length = direction.length();
-                    //var arrowHelper = new THREE.ArrowHelper(direction.normalize(), from, length, 0xffff00 );
-                    //arrowHelper.line.material = linematerial;
-                    //arrowHelper.line.computeLineDistances();
-                    //scene.add( arrowHelper );
-
+                    drawBox(x[ this.clickedObjectIndex ], y[ this.clickedObjectIndex ], z[ this.clickedObjectIndex ], 
+                        newHueValue, this.clickedObjectIndex); 
                 }
             }
         }
     }
 }
+
+function changePointSize ( box_n, size ){
+    let newBoxTime = pxHeightToTimesMs(size)
+    particles.geometry.attributes.size.array[ compositionArray[box_n].arrayIndex ] = PARTICLE_SIZE * newBoxTime * TIME_TO_POINTSIZE;
+    particles.geometry.attributes.size.needsUpdate = true;
+}
+
+
+
+const colorHsbToRgb = (h, s, b) => {
+    s /= 100;
+    b /= 100;
+    const k = (n) => (n + h / 60) % 6;
+    const f = (n) => b * (1 - s * Math.max(0, Math.min(k(n), 4 - k(n), 1)));
+    return [255 * f(5), 255 * f(3), 255 * f(1)];
+};
 
 
 const pickPosition = {x: 0, y: 0}; // pick position in 2D space
@@ -465,6 +1558,7 @@ window.addEventListener('touchmove', (event) => {
     setPickPosition(event.touches[0]);
 });
 window.addEventListener('touchend', clearPickPosition);
+
 const pickHelper = new PickHelper();
 let isMouseDown = false;
 let timer = 0;
@@ -482,624 +1576,353 @@ canvas.onmouseup = function(){
 }; 
 
 
-// COMPOSITION FUNCTIONALITIES
-class Box{
-    constructor(x, y, z, duration, arrayIndex){
-        this.x = x;
-        this.y = y;
-        this.z = z;
-        this.duration = duration;
-        this.arrayIndex = arrayIndex; // index in the array
-    }
-}
-class Meander{
-    constructor(duration){
-        this.duration = duration;
-    }
-}
-class Crossfade{
-    constructor(duration){
-        this.duration = duration;
-    }
-}
-const compositionArray = [];
-
-const MAX_COMPOSITION_TIME = 2 * 60 * 1000; // max compostion time in ms
-function calculateCurrentCompostionTime(){
-    let compositionTime = 0;
-    for (let i = 0; i < compositionArray.length; i++) {
-        compositionTime += compositionArray[i].duration * 1000
-    }
-    return compositionTime
-}
-
-function pxToDuration(px){
-    // 50 px = 6 s
-    let k = 6 / 50;
-    let dur = k * px;
-    return dur
-}
-
-// add a box when a point on the scatterplot is clicked
-var numBoxes = 0
-function addBox(boxx, boxy, boxz, randomcolor, arrayIndex) {
-    let compositionTime = calculateCurrentCompostionTime();
-    if ( compositionTime < MAX_COMPOSITION_TIME && !ISLONGPLAYBACKON ){
-        let newBox = document.createElement("div");
-        newBox.className = 'box hover';
-        newBox.id = 'box '+numBoxes;
-        newBox.style["background-color"] = '#'+randomcolor;
-        newBox.style["height"] = '50px';
-        newBox.style["width"] = '100%';
-        newBox.style["resize"] = 'vertical';
-        newBox.style["overflow-x"] = 'auto';
-        newBox.draggable = 'true';
-        newBox.addEventListener('dragstart', dragStart);
-        newBox.addEventListener('dragenter', dragEnter)
-        newBox.addEventListener('dragover', dragOver);
-        newBox.addEventListener('dragleave', dragLeave);
-        newBox.addEventListener('drop', drop);
-        document.getElementById("compose-bar").appendChild(newBox); 
-        numBoxes += 1;
-        var duration = pxToDuration(newBox.clientHeight); 
-        compositionArray.push(new Box(boxx, boxy, boxz, duration, arrayIndex));
-        //console.log(compositionArray);
-        observer.observe(newBox);
-    }
-}
-
-// prevent images inside boxes from being draggable
-function dragImgInsideBox(e) {
-    e.preventDefault();
-    e.stopPropagation(); 
-}
-
-// add new crossfade
-function addCrossfade(){
-    let compositionTime = calculateCurrentCompostionTime();
-    if ( compositionTime < MAX_COMPOSITION_TIME && !ISLONGPLAYBACKON ){
-
-        const newImg = document.createElement("img");
-        newImg.src = "imgs/arrow.png";
-        newImg.id = "img-inside-box";
-        newImg.className = "img-fluid img-inside-box";
-        newImg.style["height"] = '80%';
-
-        const newCrossfade = document.createElement("div");
-        newCrossfade.className = 'crossfade text-center hover';
-        newCrossfade.id = 'box ' + numBoxes;
-        newCrossfade.style["background-color"] = "rgba(0, 0, 0, 0.)"; //transparent background color
-        newCrossfade.style["height"] = '50px';
-        newCrossfade.style["width"] = '100%';
-        newCrossfade.style["resize"] = 'vertical';
-        newCrossfade.style["overflow-x"] = 'auto';
-        newCrossfade.draggable = 'true';
-
-        newCrossfade.appendChild(newImg)
-        document.getElementById("compose-bar").appendChild(newCrossfade); 
-
-        newCrossfade.addEventListener('dragstart', dragStart);
-        newCrossfade.addEventListener('dragenter', dragEnter)
-        newCrossfade.addEventListener('dragover', dragOver);
-        newCrossfade.addEventListener('dragleave', dragLeave);
-        newCrossfade.addEventListener('drop', drop);
-
-        newImg.addEventListener('dragstart', dragImgInsideBox);
-        newImg.addEventListener('dragenter', dragImgInsideBox)
-        newImg.addEventListener('dragover', dragImgInsideBox);
-        newImg.addEventListener('dragleave', dragImgInsideBox);
-        newImg.addEventListener('drop', dragImgInsideBox);
-
-        numBoxes += 1;
-
-        var duration = pxToDuration( newCrossfade.clientHeight ); 
-        compositionArray.push(new Crossfade(duration));
-        observer.observe(newCrossfade);
-        // update visualization
-    }
-
-}
-
-// add new meander
-function addMeander(){
-
-    let compositionTime = calculateCurrentCompostionTime();
-    if ( compositionTime < MAX_COMPOSITION_TIME && !ISLONGPLAYBACKON ){
-
-        const newImg = document.createElement("img");
-        newImg.src = "imgs/zigzag.png";
-        newImg.id = "img-inside-box";
-        newImg.className = "img-fluid img-inside-box";
-        newImg.style["height"] = '80%';
-
-        const newMeander = document.createElement("div");
-        newMeander.className = 'meander text-center hover';
-        newMeander.id = 'box ' + numBoxes;
-        newMeander.style["background-color"] = "rgba(0, 0, 0, 0.)";
-        newMeander.style["height"] = '50px';
-        newMeander.style["width"] = '100%';
-        newMeander.style["resize"] = 'vertical';
-        newMeander.style["overflow-x"] = 'auto';
-        newMeander.draggable = 'true';
-        
-        newMeander.appendChild(newImg)
-        document.getElementById("compose-bar").appendChild(newMeander); 
-
-        newMeander.addEventListener('dragstart', dragStart);
-        newMeander.addEventListener('dragenter', dragEnter)
-        newMeander.addEventListener('dragover', dragOver);
-        newMeander.addEventListener('dragleave', dragLeave);
-        newMeander.addEventListener('drop', drop);
-
-        newImg.addEventListener('dragstart', dragImgInsideBox);
-        newImg.addEventListener('dragenter', dragImgInsideBox)
-        newImg.addEventListener('dragover', dragImgInsideBox);
-        newImg.addEventListener('dragleave', dragImgInsideBox);
-        newImg.addEventListener('drop', dragImgInsideBox);
-
-        numBoxes += 1;
-
-        var duration = pxToDuration(newMeander.clientHeight); 
-        compositionArray.push(new Meander(duration));
-        observer.observe(newMeander);
-        // update visualization
-    }
-}
-
-// handling navbar elements
-const insert_crossfade = document.getElementById("insert-crossfade"); 
-insert_crossfade.addEventListener("click", addCrossfade); 
-const insert_meander = document.getElementById("insert-meander"); 
-insert_meander.addEventListener("click", addMeander); 
-
-// dragging and dropping boxes
-function dragStart(e) {
-    //console.log('drag starts...');
-    e.dataTransfer.setData('text/plain', e.target.id);
- }
- function dragEnter(e) {
-    e.preventDefault();
-    e.target.classList.add('drag-over');
- }
- function dragOver(e) {
-    e.preventDefault();
-    e.target.classList.add('drag-over');
- }
- function dragLeave(e) {
-    e.target.classList.remove('drag-over');
- }
- function drop(e) {
-    e.target.classList.remove('drag-over');
-
-    // get the draggable element
-    let id = e.dataTransfer.getData('text/plain');
-    let draggable = document.getElementById(id);
-
-    // get box indices
-    let index_draggable = Number(id.split(' ')[1]);
-    let index_target = Number(e.target.id.split(' ')[1]);
-    var draggable_x = null;
-    var draggable_y = null;
-    var target_x = null;
-    var target_y = null;
-    if (compositionArray[index_draggable] instanceof Box){
-        draggable_x = compositionArray[index_draggable].x;
-        draggable_y = compositionArray[index_draggable].y;
-    }
-    if (compositionArray[index_target] instanceof Box){
-        target_x = compositionArray[index_target].x;
-        target_y = compositionArray[index_target].x;
-    }
-
-    if (index_draggable != index_target){
-        
-        // locate boxes to swap
-        let target_node = e.target.parentElement.children[index_target];
-        let draggable_node = e.target.parentElement.children[index_draggable];
-        console.log('swapping box '+ index_draggable + ' with box '+ index_target);
-        let parent = e.target.parentElement;
-        // swap boxes
-        exchangeElements(draggable_node, target_node);
-        [compositionArray[index_draggable], compositionArray[index_target]] = [compositionArray[index_target], compositionArray[index_draggable]];
-
-        // correct ids
-        let new_target_node = document.getElementById('box '+ (index_target));
-        let new_draggable_node = document.getElementById('box '+ (index_draggable)); 
-        new_target_node.id = 'box ' + (index_draggable);
-        new_draggable_node.id = 'box ' + (index_target);
-    }
-    // display the draggable element
-    draggable.classList.remove('hide');
-    // update scatterplot representation
-    renderPath();
-}
-
-// exchange boxes
-function exchangeElements(element1, element2){
-    var clonedElement1 = element1.cloneNode(true);
-    var clonedElement2 = element2.cloneNode(true);
-    clonedElement1.addEventListener('dragstart', dragStart);
-    clonedElement1.addEventListener('dragenter', dragEnter)
-    clonedElement1.addEventListener('dragover', dragOver);
-    clonedElement1.addEventListener('dragleave', dragLeave);
-    clonedElement1.addEventListener('drop', drop);
-    clonedElement2.addEventListener('dragstart', dragStart);
-    clonedElement2.addEventListener('dragenter', dragEnter)
-    clonedElement2.addEventListener('dragover', dragOver);
-    clonedElement2.addEventListener('dragleave', dragLeave);
-    clonedElement2.addEventListener('drop', drop);
-    if (clonedElement1.children.length > 0){
-        clonedElement1.children[0].addEventListener('dragstart', dragImgInsideBox);
-        clonedElement1.children[0].addEventListener('dragenter', dragImgInsideBox)
-        clonedElement1.children[0].addEventListener('dragover', dragImgInsideBox);
-        clonedElement1.children[0].addEventListener('dragleave', dragImgInsideBox);
-        clonedElement1.children[0].addEventListener('drop', dragImgInsideBox);
-    }
-    if (clonedElement2.children.length > 0){
-        clonedElement2.children[0].addEventListener('dragstart', dragImgInsideBox);
-        clonedElement2.children[0].addEventListener('dragenter', dragImgInsideBox)
-        clonedElement2.children[0].addEventListener('dragover', dragImgInsideBox);
-        clonedElement2.children[0].addEventListener('dragleave', dragImgInsideBox);
-        clonedElement2.children[0].addEventListener('drop', dragImgInsideBox);
-    }
-    element2.parentNode.replaceChild(clonedElement1, element2);
-    element1.parentNode.replaceChild(clonedElement2, element1);
-    observer.observe(clonedElement1);
-    observer.observe(clonedElement2);
-}
-
-
-// implement trash bin
-function dropOnTrashBin(e) {
-    // update class list
-    e.target.classList.remove('drag-over');
-    // find and remove draggable element
-    let id_draggable = e.dataTransfer.getData('text/plain');
-    let draggable = document.getElementById(id_draggable);
-    let parent = draggable.parentNode
-    // reset color and size of scatterplot element
-    let removed_box_index = Number(id_draggable.split(' ')[1]);
-    if (compositionArray[removed_box_index] instanceof Box){
-        pointToBasic(compositionArray[removed_box_index].arrayIndex);
-        // remove scatterplot element
-        //var scatterplot_index = findIndexGivenCoords(compositionArray[removed_box_index].x, compositionArray[removed_box_index].y);
-        //sizes[scatterplot_index] = base_size;
-        //colors[scatterplot_index] = base_color;
-        // update visualization
-    }
-    draggable.remove();
-    numBoxes -= 1;
-    // adjust IDs of remaining boxes
-    for (var i = removed_box_index; i < numBoxes; i++) {
-        var old_id = parent.children[i].id.split(' ');
-        old_id[1] = Number(old_id[1])-1;
-        parent.children[i].id = old_id.join(' ');
-    }
-    // remove item from composition array
-    let comp_index = Number(id_draggable.split(' ')[1]);
-    compositionArray.splice(comp_index, 1);
-    // reduce number of boxes
-    console.log('removing element: '+ comp_index);
-    // update visualization
-    renderPath();
-}
-
-// trash bin functionalities
-var trashBin = document.getElementById('bin');
-trashBin.addEventListener('dragover', dragOver);
-trashBin.addEventListener('dragenter', dragEnter)
-trashBin.addEventListener('dragleave', dragLeave);
-trashBin.addEventListener('drop', dropOnTrashBin);
-trashBin.parentNode.addEventListener('dragover', dragImgInsideBox);
-trashBin.parentNode.addEventListener('dragenter', dragImgInsideBox);
-trashBin.parentNode.addEventListener('dragleave', dragImgInsideBox);
-trashBin.parentNode.addEventListener('drop', dragImgInsideBox);
-
-// check for resize event
-const observer = new ResizeObserver(function(mutations) {
-    var resizedID = mutations[0].target.attributes.id.nodeValue;
-    var resized_newHeight = mutations[0].contentRect.height; // height in px
-    // scale px to width of marker: 100px = 20px marker
-    console.log('resizing '+resizedID);
-
-    // update box duration in composition array
-    var boxNumber = Number(resizedID.split(' ')[1]);
-    if(compositionArray[boxNumber] && resized_newHeight != 0){
-        compositionArray[boxNumber].duration = pxToDuration(resized_newHeight);
-    }
-
-    // check if resized element is a box
-    if (compositionArray[boxNumber] instanceof Box){
-        // find index of resized element in array of all point coordinates
-        //var index = findIndexGivenCoords(compositionArray[boxNumber].x, compositionArray[boxNumber].y);
-        //resize marker
-        var heightToPointSize = 0.25;
-        particles.geometry.attributes.size.array[ compositionArray[boxNumber].arrayIndex ] = PARTICLE_SIZE * resized_newHeight * heightToPointSize;
-        particles.geometry.attributes.size.needsUpdate = true;
-    
-        //var update = {'marker':{color:colors, size:sizes, opacity:opacity}};
-        //Plotly.restyle('scatterPlot', update, 0);
-    }
-    //console.log(mutations[0].target.attributes.id);
-    //console.log(mutations[0].contentRect.width, mutations[0].contentRect.height);
-});
-
-
-// HIGHLIGHT BOX ON CLICK
-//let clicked = false;
-//document.addEventListener('mousedown', e => { clicked = true; });
-//document.addEventListener('mousemove', e => { clicked = false; });
-//document.addEventListener('mouseup', event => {
-document.addEventListener('click', event => {
-    if ( !ISLONGPLAYBACKON ) {
-        highlightBoxElement(event.target);
-    } 
-})
-
-// PLAY FUNCTION
-var ISPLAYBACKON = false;
-var ISLONGPLAYBACKON = false;
-var play = function(){
-    var timeout = 0;
-    ISLONGPLAYBACKON = true;
-    disableAllInteractions();
-    console.log("playing composition: ", compositionArray)
-    for (let i = 0; i < compositionArray.length; i++) {
-            setTimeout(function() {
-                if( ISLONGPLAYBACKON ){
-                    console.log('playing: ',compositionArray[i]);
-                    //sendBox(compositionArray[i].x, compositionArray[i].y);
-                    highlightBoxElement(document.getElementById('box '+i)); 
-                }
-            }, timeout);
-            timeout += (compositionArray[i].duration * 1000);    
-        //console.log(timeout);
-    }
-    setTimeout(function() {
-        if( ISLONGPLAYBACKON ){
-            console.log('End of composition');
-            ISLONGPLAYBACKON = false;
-            sendStop();
-            enableAllInteractions();
-            document.getElementById("box "+(compositionArray.length-1)).classList.remove('click-on-box');
-        }
-    }, timeout+100);
-};
-document.getElementById("play").onclick = play;
-
 let MOUSEONSCATTERPLOT = false;
 document.getElementById("scatterPlot").addEventListener("mouseenter", function(  ) {
     MOUSEONSCATTERPLOT=true;
 });
 document.getElementById("scatterPlot").addEventListener("mouseout", function(  ) { 
     MOUSEONSCATTERPLOT=false;
-    if (!ISPLAYBACKON && !ISLONGPLAYBACKON ){
-        sendStop();
+});
+
+// RENDERING FUNCTIONS
+function pointToBasic(pointIndex){
+    // restore point rendering to the basic properties
+    // update size
+    particles.geometry.attributes.size.array[ pointIndex ] = PARTICLE_SIZE;
+    particles.geometry.attributes.size.needsUpdate = true;
+    // update color
+    let newcolor = new THREE.Color();
+    newcolor.setRGB( 255, 0, 0 );
+    particles.geometry.attributes.customColor.array[ pointIndex * 3 ] = newcolor.r;
+    particles.geometry.attributes.customColor.array[ pointIndex * 3 + 1 ] = newcolor.g;
+    particles.geometry.attributes.customColor.array[ pointIndex * 3 + 2 ] = newcolor.b;
+    particles.geometry.attributes.customColor.needsUpdate = true;
+    material.needsUpdate = true
+}
+
+
+let linecolor = new THREE.Color();
+linecolor.r = linecolor.g = linecolor.b = 0.9;
+
+
+let arrowsIDs = []
+// RENDER PATH
+function renderPath(){
+    // remove all previous lines
+    for (let i = 0; i < arrowsIDs.length; i++) {
+        //console.log(arrowsIDs[i])
+        var selectedObject = scene.getObjectByName(arrowsIDs[i]);
+        scene.remove( selectedObject );
+    }
+    MEANDERS_LIST = [];
+    numMeanders = 0;
+    // draw new arrows
+    for (let i = 0; i < compositionArray.length; i++) {
+        if (i !=0){ // check if not on the first object
+            if (compositionArray[i] instanceof Crossfade){
+                // check if before and after there are boxes
+                if (compositionArray[i-1] instanceof Box && compositionArray[i+1] instanceof Box){
+
+                    let linepoints = [];
+                    let x1 = compositionArray[i-1].x * scale_x - (scale_x/2),
+                        y1 = compositionArray[i-1].y * scale_y - (scale_y/2),
+                        z1 = compositionArray[i-1].z * scale_z - (scale_z/2);
+                    let x2 = compositionArray[i+1].x * scale_x - (scale_x/2),
+                        y2 = compositionArray[i+1].y * scale_y - (scale_y/2),
+                        z2 = compositionArray[i+1].z * scale_z - (scale_z/2);
+                    linepoints.push( new THREE.Vector3( x1,y1,z1 )); 
+                    linepoints.push( new THREE.Vector3( x2,y2,z2 )); 
+
+                    let linegeometry = new THREE.BufferGeometry().setFromPoints( linepoints );
+                    let linematerial = new THREE.LineBasicMaterial( { color: linecolor, linewidth: 10, opacity: 0.9} );
+                    let line = new THREE.Line( linegeometry, linematerial );
+                    //let line = customArrow(x1,y1,z1,x2,y2,z2, 10, 0x0000ff);
+                    let line_name = "crossfade "+compositionArray[i-1].arrayIndex+' '+compositionArray[i+1].arrayIndex;
+                    line.name = line_name;
+                    arrowsIDs.push(line_name);
+                    scene.add( line );
+
+                }
+            } 
+            else if (compositionArray[i] instanceof Meander){
+                // check if before and after there are boxes
+                if (compositionArray[i-1] instanceof Box && compositionArray[i+1] instanceof Box){
+
+                    let linepoints = [];
+                    let x1 = compositionArray[i-1].x, //* scale_x - (scale_x/2),
+                        y1 = compositionArray[i-1].y, //* scale_y - (scale_y/2),
+                        z1 = compositionArray[i-1].z; //* scale_z - (scale_z/2);
+                    let x2 = compositionArray[i+1].x, //* scale_x - (scale_x/2),
+                        y2 = compositionArray[i+1].y, //* scale_y - (scale_y/2),
+                        z2 = compositionArray[i+1].z; // * scale_z - (scale_z/2);
+
+                    sendDrawMeander(x1, y1, z1, x2, y2, z2);
+                    
+                }
+            } 
+            else if (compositionArray[i] instanceof Box){
+                // check if before there is a box
+                if (compositionArray[i-1] instanceof Box){ 
+                    // add straight line if jump
+                    let linepoints = [];
+                    let x1 = compositionArray[i-1].x * scale_x - (scale_x/2),
+                        y1 = compositionArray[i-1].y * scale_y - (scale_y/2),
+                        z1 = compositionArray[i-1].z * scale_z - (scale_z/2);
+                    let x2 = compositionArray[i].x * scale_x - (scale_x/2),
+                        y2 = compositionArray[i].y * scale_y - (scale_y/2),
+                        z2 = compositionArray[i].z * scale_z - (scale_z/2);
+                    linepoints.push( new THREE.Vector3( x1,y1,z1 )); 
+                    linepoints.push( new THREE.Vector3( x2,y2,z2 )); 
+                    
+                    let linegeometry = new THREE.BufferGeometry().setFromPoints( linepoints );
+                    let linematerial = new THREE.LineDashedMaterial( {  color: linecolor, dashSize: 2, gapSize: 2, opacity: 0.9 } );
+                    let line = new THREE.Line( linegeometry, linematerial );
+                    line.computeLineDistances();
+                    let line_name = "jump "+compositionArray[i-1].arrayIndex+' '+compositionArray[i].arrayIndex;
+                    line.name = line_name;
+                    arrowsIDs.push(line_name);
+                    scene.add( line );
+
+                }
+            }
+        }
+    }
+}
+
+let MEANDERS_LIST = [];
+let numMeanders = 0;
+let newMeanderIndices = undefined;
+port.on("message", function (oscMessage) {
+    $("#message").text(JSON.stringify(oscMessage, undefined, 2));
+    newMeanderIndices = oscMessage.args[0].split(" ");
+    var newMeanderIndices_filtered = newMeanderIndices.filter(function (el) {
+        return el != "";
+      });
+    //console.log(newMeanderIndices_filtered);
+
+    if ( newMeanderIndices_filtered ){
+        for ( let i = 3; i < newMeanderIndices_filtered.length; i+=3 ) {
+            
+            //let preavious_meanderidx = Number(newMeanderIndices_filtered[i-1]);
+            //let meanderidx = Number(newMeanderIndices_filtered[i]);
+            let linepoints = [];
+            let x1 = Number(newMeanderIndices_filtered[i-3]) * scale_x - (scale_x/2),
+                y1 = Number(newMeanderIndices_filtered[i-2]) * scale_y - (scale_y/2),
+                z1 = Number(newMeanderIndices_filtered[i-1]) * scale_z - (scale_z/2);
+            let x2 = Number(newMeanderIndices_filtered[i]) * scale_x - (scale_x/2),
+                y2 = Number(newMeanderIndices_filtered[i+1]) * scale_y - (scale_y/2),
+                z2 = Number(newMeanderIndices_filtered[i+2]) * scale_z - (scale_z/2);
+            linepoints.push( new THREE.Vector3( x1,y1,z1 )); 
+            linepoints.push( new THREE.Vector3( x2,y2,z2 )); 
+
+            let linegeometry = new THREE.BufferGeometry().setFromPoints( linepoints );
+            let linematerial = new THREE.LineDashedMaterial( {  color: linecolor, dashSize: 2, gapSize: 2, opacity: 0.9 } );
+            let line = new THREE.Line( linegeometry, linematerial );
+            line.computeLineDistances();
+            let line_name = "meandercomponent "+x1+y1+z1+" "+x2+y2+z2;
+            line.name = line_name;
+            arrowsIDs.push(line_name);
+            scene.add( line );
+        
+        }
+        MEANDERS_LIST.push(newMeanderIndices_filtered);
+        let internalMeanderCount = 0;
+        //console.log(compositionArray)
+        for ( let i = 0; i < compositionArray.length; i++ ) {
+            if ( compositionArray[i] instanceof Meander ){
+                if (internalMeanderCount == numMeanders ){
+                    compositionArray[i].meanderComponents = MEANDERS_LIST[internalMeanderCount];
+                }
+                internalMeanderCount += 1;
+            }
+        }
+        numMeanders += 1;
     }
 });
 
-var stopPlayback = function(){
-    sendStop();
-    ISLONGPLAYBACKON = false;
-    ISPLAYBACKON = false;
-    var all_click_on_box = document.getElementsByClassName('click-on-box');
-    for (var i = 0; i < all_click_on_box.length; i++) {
-        all_click_on_box[i].classList.remove('click-on-box');
-    }
-    enableAllInteractions();
-}
-document.getElementById("stop").onclick = stopPlayback;
 
-function disableAllInteractions(){
-    document.getElementById("insert-crossfade-button").disabled = true;
-    document.getElementById("insert-meander-button").disabled = true;
-    document.getElementById("bin-button").disabled = true;
-    document.getElementById("play-button").disabled = true;
-    for (var i = 0; i < numBoxes; i++) {
-        let thisbox = document.getElementById("box "+i);
-        thisbox.draggable = false;
-        thisbox.style["resize"] = null;
-        thisbox.style["overflow-x"] = null;
-        thisbox.classList.remove("hover");
-    }
+function createCursor( cursor_x, cursor_y, cursor_z ){
+
+    let newcolor = new THREE.Color();
+    let newHueValue = 0.7;
+    let newRGBvalues = colorHsbToRgb( newHueValue*360, 0.9*100, 0.9*100 );
+    newcolor.setRGB( newRGBvalues[0]/255, newRGBvalues[1]/255, newRGBvalues[2]/255 );
+
+    const sprite = new THREE.TextureLoader().load( 'imgs/disc.png' );
+    sprite.colorSpace = THREE.SRGBColorSpace;
+
+    const dotGeometry = new THREE.BufferGeometry();
+    dotGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array([cursor_x, cursor_y, cursor_z]), 3));
+    //const dotMaterial = new THREE.PointsMaterial({ size: 10, color: newcolor });
+    const dotMaterial = new THREE.PointsMaterial( { size: 10, sizeAttenuation: true, map: sprite, alphaTest: 0.5, transparent: false } );
+    dotMaterial.color.setHSL( 0.5, 0.9, 0.8, THREE.SRGBColorSpace );
+    const dot = new THREE.Points(dotGeometry, dotMaterial);
+    return dot
+
 }
 
-function enableAllInteractions(){
-    document.getElementById("insert-crossfade-button").disabled = false;
-    document.getElementById("insert-meander-button").disabled = false;
-    document.getElementById("bin-button").disabled = false;
-    document.getElementById("play-button").disabled = false;
-    for (var i = 0; i < numBoxes; i++) {
-        let thisbox = document.getElementById("box "+i);
-        thisbox.draggable = true;
-        thisbox.style["resize"] = 'vertical';
-        thisbox.style["overflow-x"] = 'auto';
-        thisbox.classList.add("hover");
-    }
+function setCursorPosition( cursor_x, cursor_y, cursor_z ){
+    cursor.position.x = cursor_x;
+    cursor.position.y = cursor_y;
+    cursor.position.z = cursor_z;
 }
 
-function highlightBoxElement(element){
-    if ( !ISLONGPLAYBACKON ){
-        // highlight box and show what is playing graphically 
-        if ( element.classList.contains('box') ){
-            if ( !ISPLAYBACKON ){ 
-                graphicHighlightBox(element);
-                var boxNumber = Number(element.id.split(' ')[1]);
-                // listen to box
-                sendBox(compositionArray[boxNumber].x, compositionArray[boxNumber].y);
-                ISPLAYBACKON = true;
-                setTimeout(function() {
-                    if ( !ISLONGPLAYBACKON && ISPLAYBACKON ){
-                        document.getElementById(element.id).classList.remove('click-on-box');
-                        console.log("end of single box playback");
-                        ISPLAYBACKON = false;
-                        sendStop();
-                    }
-                }, compositionArray[boxNumber].duration * 1000);    
-            }
-        } else if (element.classList.contains('meander')){
-            if ( !ISPLAYBACKON ){ 
-                graphicHighlightBox(element);
-                // send OSC and listen to meander 
-                var compositionIndex = Number(element.id.split(' ')[1]);
-                if (compositionIndex != 0 && compositionArray[compositionIndex] instanceof Meander){
-                    // check if before and after there are boxes
-                    if (compositionArray[compositionIndex-1] instanceof Box && compositionArray[compositionIndex+1] instanceof Box){
-                        sendBox(compositionArray[compositionIndex-1].x, compositionArray[compositionIndex-1].y);
-                        sendMeander(compositionArray[compositionIndex-1].x, compositionArray[compositionIndex-1].y, 
-                            compositionArray[compositionIndex+1].x, compositionArray[compositionIndex+1].y, 
-                            compositionArray[compositionIndex].duration);
-                        ISPLAYBACKON = true;
-                        setTimeout(function() {
-                            if ( !ISLONGPLAYBACKON && ISPLAYBACKON ){
-                                console.log("end of single crossfade playback");
-                                ISPLAYBACKON = false;
-                                sendStop();
-                                document.getElementById(element.id).classList.remove('click-on-box');
-                            }
-                        }, compositionArray[compositionIndex].duration * 1000);
-                    }
-                }
-            }
-        } else if (element.classList.contains('crossfade')){
-            if ( !ISPLAYBACKON ){ 
-                graphicHighlightBox(element);
-                // send OSC and listen to crossfade 
-                var compositionIndex = Number(element.id.split(' ')[1]);
-                if (compositionIndex != 0 && compositionArray[compositionIndex] instanceof Crossfade){
-                    // check if before and after there are boxes
-                    if (compositionArray[compositionIndex-1] instanceof Box && compositionArray[compositionIndex+1] instanceof Box){
-                        sendBox(compositionArray[compositionIndex-1].x, compositionArray[compositionIndex-1].y);
-                        sendCrossfade(compositionArray[compositionIndex-1].x, compositionArray[compositionIndex-1].y, 
-                                    compositionArray[compositionIndex+1].x, compositionArray[compositionIndex+1].y, 
-                                    compositionArray[compositionIndex].duration);
-                            ISPLAYBACKON = true;
-                            setTimeout(function() {
-                                if ( !ISLONGPLAYBACKON && ISPLAYBACKON ){
-                                    console.log("end of single meander playback");
-                                    ISPLAYBACKON = false;
-                                    sendStop();
-                                    document.getElementById(element.id).classList.remove('click-on-box');
-                                }
-                            }, compositionArray[compositionIndex].duration * 1000);
-                        }
-                    }
-            }
-        } else {
-            // in playback mode DO NOTHING on click outside box or on other boxes 
-            graphicHighlightBox(element);
-            sendStop();
-            ISPLAYBACKON = false;
-        }
-    } else {
-        if ( element.classList.contains('box') ){
-            graphicHighlightBox(element);
-            var boxNumber = Number(element.id.split(' ')[1]);
-            // listen to box
-            sendBox(compositionArray[boxNumber].x, compositionArray[boxNumber].y);
-        } else if (element.classList.contains('crossfade')){
-            var compositionIndex = Number(element.id.split(' ')[1]);
-            // check if before and after there are boxes
-            if (compositionIndex != 0 && compositionArray[compositionIndex] instanceof Crossfade){
-                // send OSC and listen to meander 
-                if (compositionArray[compositionIndex-1] instanceof Box && compositionArray[compositionIndex+1] instanceof Box){
-                    graphicHighlightBox(element);
-                    sendBox(compositionArray[compositionIndex-1].x, compositionArray[compositionIndex-1].y);
-                    sendCrossfade(compositionArray[compositionIndex-1].x, compositionArray[compositionIndex-1].y, 
-                        compositionArray[compositionIndex+1].x, compositionArray[compositionIndex+1].y, 
-                        compositionArray[compositionIndex].duration);
-                }
-            }
-        } else if ( element.classList.contains('meander') ){
-            // check if before and after there are boxes
-            var compositionIndex = Number(element.id.split(' ')[1]);
-            if (compositionIndex != 0 && compositionArray[compositionIndex] instanceof Meander){
-                if (compositionArray[compositionIndex-1] instanceof Box && compositionArray[compositionIndex+1] instanceof Box){
-                    // send OSC and listen to crossfade 
-                    graphicHighlightBox(element);
-                    sendBox(compositionArray[compositionIndex-1].x, compositionArray[compositionIndex-1].y);
-                    sendMeander(compositionArray[compositionIndex-1].x, compositionArray[compositionIndex-1].y, 
-                                compositionArray[compositionIndex+1].x, compositionArray[compositionIndex+1].y, 
-                                compositionArray[compositionIndex].duration);
-                }
-            }
-        } 
-    }
-}
+let meanderPlaybackTimeouts = []
+function animateMeander( meander, time ){
+    if ( meander ){
+        // the interval at which the meander changes position
+        let meandercursortime = 0
+        let time_interval = time / (meander.length/3);
+        let cursor_x = Number(meander[0]), //* scale_x - (scale_x/2),
+            cursor_y = Number(meander[1]), //* scale_y - (scale_y/2),
+            cursor_z = Number(meander[2]); //* scale_z - (scale_z/2);
+        cursor = createCursor( cursor_x, cursor_y, cursor_z );
+        scene.add(cursor);
 
-function graphicHighlightBox(element){
-    // highlight box
-    if ( element.classList.contains('box') ) {
-        element.classList.add('click-on-box');
-        // highlight dot in the scatterplot
-        var newopacities = new Float32Array( N_POINTS ).fill(0.3);
-        var compositionIndex = Number(element.id.split(' ')[1]);
-        newopacities[compositionArray[compositionIndex].arrayIndex] = 1;
-        particles.geometry.attributes.opacity.array = newopacities;
-        particles.geometry.attributes.opacity.needsUpdate = true;
-        // reset opacity of all other lines
-        for (var i = 0; i < arrowsIDs.length; i++) {
-            var lineObject = scene.getObjectByName( arrowsIDs[i] );
-            lineObject.material.opacity = 0.1;    
+        for ( let i = 0; i < meander.length; i+=3 ) {
+            var meanderCursorTimeout = setTimeout(function() {
+                cursor_x = Number(meander[i]) * scale_x - (scale_x/2);
+                cursor_y = Number(meander[i+1]) * scale_y - (scale_y/2);
+                cursor_z = Number(meander[i+2]) * scale_z - (scale_z/2);
+                setCursorPosition( cursor_x, cursor_y, cursor_z );
+                //console.log(cursor_x, cursor_y, cursor_z);
+            }, meandercursortime );
+            meandercursortime += time_interval;
+            meanderPlaybackTimeouts.push(meanderCursorTimeout);
         }
-
-    } else if ( element.classList.contains('meander') ) {
-        element.classList.add('click-on-box');
-        var newopacities = new Float32Array( N_POINTS ).fill(0.3);
-        particles.geometry.attributes.opacity.array = newopacities;
-        particles.geometry.attributes.opacity.needsUpdate = true;
-        var compositionIndex = Number(element.id.split(' ')[1]);
-        if ( compositionArray[compositionIndex-1] instanceof Box && compositionArray[compositionIndex+1] instanceof Box ){
-            // reset opacity of all other lines
-            for (var i = 0; i < arrowsIDs.length; i++) {
-                var lineObject = scene.getObjectByName( arrowsIDs[i] );
-                lineObject.material.opacity = 0.1;    
-            }
-            let linename = "meander "+compositionArray[compositionIndex-1].arrayIndex+' '+compositionArray[compositionIndex+1].arrayIndex;
-            var meanderObject = scene.getObjectByName( linename );
-            meanderObject.material.opacity = 1;
-        }
-        // highlight arrow in the scatterplot
-    } else if ( element.classList.contains('crossfade') ) {
-        element.classList.add('click-on-box');
-        var newopacities = new Float32Array( N_POINTS ).fill(0.3);
-        particles.geometry.attributes.opacity.array = newopacities;
-        particles.geometry.attributes.opacity.needsUpdate = true;
-        var compositionIndex = Number(element.id.split(' ')[1]);
-        if ( compositionArray[compositionIndex-1] instanceof Box && compositionArray[compositionIndex+1] instanceof Box ){
-            // reset opacity of all other lines
-            for (var i = 0; i < arrowsIDs.length; i++) {
-                var lineObject = scene.getObjectByName( arrowsIDs[i] );
-                lineObject.material.opacity = 0.1;    
-            }
-            let linename = "crossfade "+compositionArray[compositionIndex-1].arrayIndex+' '+compositionArray[compositionIndex+1].arrayIndex;
-            var crossfadeObject = scene.getObjectByName( linename );
-            crossfadeObject.material.opacity = 1;
-        }
-        // highlight arrow in the scatterplot
-    } else {
-        // reset points opacity
-        var newopacities = new Float32Array( N_POINTS ).fill(BASE_OPACITY);
-        particles.geometry.attributes.opacity.array = newopacities;
-        particles.geometry.attributes.opacity.needsUpdate = true;
-        // reset lines opacity
-        for (var i = 0; i < arrowsIDs.length; i++) {
-            var lineObject = scene.getObjectByName( arrowsIDs[i] );
-            lineObject.material.opacity = 0.1;
-        }
-    }
-    // de-highlight all other boxes
-    var all_click_on_box = document.getElementsByClassName('click-on-box');
-    for (var i = 0; i < all_click_on_box.length; i++) {
-        if(all_click_on_box[i].id != element.id){
-            all_click_on_box[i].classList.remove('click-on-box');
-        }
+        var meanderCursorTimeout = setTimeout(function() {
+            scene.remove(cursor);
+        }, meandercursortime );
+        meanderPlaybackTimeouts.push(meanderCursorTimeout);
     }
 }
 
 
-// TRANSFER THE BOXES AS OVERLAY OBJECT ON THE 3D INTERFACE
-// https://discourse.threejs.org/t/embed-a-div-into-a-scene/2338
-/*let aaaaaa = document.createElement("div");
-aaaaaa.className = 'overlay';
-renderer.domElement.parentNode.appendChild(aaaaaa);*/
+let crossfadePlaybackTimeouts = []
+function animateCrossfade( x1,y1,z1, x2,y2,z2, crossfade_time ){
+    // the interval at which the meander changes position
+    let crossfade_time_granularity = 200;
+    let meandercursortime = 0
+    let time_interval = crossfade_time / crossfade_time_granularity;
+    let cursor_x1 = x1 * scale_x - (scale_x/2),
+        cursor_y1 = y1 * scale_y - (scale_y/2),
+        cursor_z1 = z1 * scale_z - (scale_z/2);
+    let cursor_x2 = x2 * scale_x - (scale_x/2),
+        cursor_y2 = y2 * scale_y - (scale_y/2),
+        cursor_z2 = z2 * scale_z - (scale_z/2);
+    let space_interval_x = (cursor_x2-cursor_x1) / crossfade_time_granularity;
+    let space_interval_y = (cursor_y2-cursor_y1) / crossfade_time_granularity;
+    let space_interval_z = (cursor_z2-cursor_z1) / crossfade_time_granularity;
+    cursor = createCursor( cursor_x1, cursor_y1, cursor_z1 );
+    scene.add(cursor);
+
+    for ( let i = 0; i < crossfade_time_granularity; i++ ) {
+        var crossfadeCursorTimeout = setTimeout(function() {
+
+            cursor.position.x += space_interval_x;
+            cursor.position.y += space_interval_y;
+            cursor.position.z += space_interval_z;
+
+        }, meandercursortime );
+        meandercursortime += time_interval;
+        crossfadePlaybackTimeouts.push(crossfadeCursorTimeout);
+    }
+    var crossfadeCursorTimeout = setTimeout(function() {
+        scene.remove(cursor);
+    }, meandercursortime );
+    crossfadePlaybackTimeouts.push(crossfadeCursorTimeout);
+}
+
+
+let cursor = undefined;
+let cursor_x =0, cursor_y = 0, cursor_z = 0;
+let cursor_target_x = 20, cursor_target_y = 20, cursor_target_z = 20;
+//cursor = createCursor( cursor_x, cursor_y, cursor_z );
+//scene.add(cursor);
+//animateCrossfade( 0,0,0, 20,20,20, 10000 );
+
+
+
+//scene.remove(cursor);    
+
+//cursor = createCursor( compositionArray[box_n].x * scale_x - (scale_x/2), 
+                        //compositionArray[box_n].y * scale_y - (scale_y/2), 
+                        //compositionArray[box_n].z  * scale_z - (scale_z/2));
+//scene.remove(cursor);
+
+
+// TEXTLOG
+
+var open_textlog = document.getElementById("open-textlog");
+var close_textlog = document.getElementById("close-textlog");
+var textlog = document.getElementById("textlog");
+var textlog_div = document.getElementById("text-logs");
+
+close_textlog.style.display = "none";
+textlog.style.display = "none";
+open_textlog.style["cursor"] = "pointer";
+close_textlog.style["cursor"] = "pointer";
+
+
+open_textlog.onclick = function(){
+    close_textlog.style.display = "block";
+    textlog.style.display = "block";
+    open_textlog.style.display = "none";
+    textlog_div.style["height"] = "300px";
+    textlog_div.style["width"] = "300px";
+}; 
+
+close_textlog.onclick = function(){
+    close_textlog.style.display = "none";
+    textlog.style.display = "none";
+    open_textlog.style.display = "block";
+    textlog_div.style["height"] = "20px";
+    textlog_div.style["width"] = "20px";
+}; 
+
+
+
+
+/*
+// TIMELINE CURSOR
+let cursor_x = 0.1;
+let cursor_y = 0.1;
+let cursor_z = 0.1;
+
+const pointergeometry = new THREE.BufferGeometry();
+const pointervertices = []
+let pointer_x = cursor_x * scale_x - (scale_x/2);
+let pointer_y = cursor_y * scale_y - (scale_y/2);
+let pointer_z = cursor_z * scale_z - (scale_z/2);
+pointervertices.push( pointer_x, pointer_y, pointer_z);
+
+const pointercolors = []
+const pointercolor = new THREE.Color();
+pointercolor.setRGB( 255, 0, 0 );
+pointercolors.push( pointercolor.r, pointercolor.g, pointercolor.b );
+
+let pointersize = PARTICLE_SIZE;
+let pointeropacity = BASE_OPACITY;
+
+pointergeometry.setAttribute( 'position', new THREE.Float32BufferAttribute( pointervertices, 3 ) );
+pointergeometry.setAttribute( 'customColor', new THREE.Float32BufferAttribute( pointercolors, 3 ) );
+pointergeometry.setAttribute( 'size', new THREE.Float32BufferAttribute( pointersize, 1 ) );
+pointergeometry.setAttribute( 'opacity', new THREE.Float32BufferAttribute( pointeropacity, 1 ) );
+
+let pointermaterial = new THREE.ShaderMaterial( {
+    uniforms: {
+        color: { value: new THREE.Color( 0xffffff ) },
+        pointTexture: { value: new THREE.TextureLoader().load( 'imgs/disc.png' ) },
+        alphaTest: { value: 0.9 }
+    },
+    vertexShader: document.getElementById( 'vertexshader' ).textContent,
+    fragmentShader: document.getElementById( 'fragmentshader' ).textContent,
+    blending: THREE.AdditiveBlending,
+    depthTest: false,
+    transparent: true
+} );
+
+// RENDER POINTS
+const timeline_cursor = new THREE.Points( pointergeometry, pointermaterial );
+scene.add( timeline_cursor );
+*/
