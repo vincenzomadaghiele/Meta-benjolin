@@ -141,8 +141,10 @@ function drawBox(boxx, boxy, boxz, colorHue, arrayIndex){
                 let item_index = Number(newBox.id.split(" ")[1])
                 highlightBox( item_index );
                 event.target.style["cursor"] = "pointer";
+                textlog.innerHTML="A circle represents a fixed state of the system <br><br> Click on it to listen to this state. <br> Drag the border of the circle to increase this state's duration <br> Drag this element on another one to put it on top of it. ";
             } else {
                 event.target.style["cursor"] = "default";
+                textlog.innerHTML="Single element selection is disabled during playback";
             }
         }); 
         // CLICK INTERACTION
@@ -161,6 +163,9 @@ function drawBox(boxx, boxy, boxz, colorHue, arrayIndex){
                 SELECTED_ELEMENT = item_index;
                 //highlightBox( item_index ); 
                 playBox( item_index );
+                textlog.innerHTML="A circle represents a fixed state of the system <br><br> Click on it to listen to this state. <br> Drag the border of the circle to increase this state's duration <br> Drag this element on another one to put it on top of it. ";
+            } else {
+                textlog.innerHTML="Single element selection is disabled during playback";
             }
         }); 
         // DRAG AND DROP INTERACTION
@@ -261,8 +266,10 @@ function drawCrossfade(){
                 let item_index = Number(newBox.id.split(" ")[1])
                 highlightBox(item_index);
                 event.target.style["cursor"] = "pointer";
+                textlog.innerHTML="A crossfade is a smooth transition between two states of the system <br><br> CAREFUL: a crossfade has to be placed between two circles, otherwise it will be ignored! <br><br> Drag the handle to increase this crossfade's duration. <br> Drag this element on another one to put it on top of it. ";
             } else {
                 event.target.style["cursor"] = "default";
+                textlog.innerHTML="Single element selection is disabled during playback";
             }
         }); 
         // CLICK INTERACTION
@@ -281,6 +288,9 @@ function drawCrossfade(){
                 SELECTED_ELEMENT = item_index;
                 //highlightBox(item_index); 
                 playBox( SELECTED_ELEMENT );
+                textlog.innerHTML="A crossfade is a smooth transition between two states of the system <br><br> CAREFUL: a crossfade has to be placed between two circles, otherwise it will be ignored! <br><br> Drag the handle to increase this crossfade's duration. <br> Drag this element on another one to put it on top of it. ";
+            } else {
+                textlog.innerHTML="Single element selection is disabled during playback";
             }
         });
         // DRAG AND DROP INTERACTION
@@ -394,8 +404,11 @@ function drawMeander(){
                 let item_index = Number(newBox.id.split(" ")[1])
                 highlightBox(item_index);
                 event.target.style["cursor"] = "pointer";
+                textlog.innerHTML="A meander is a transition between two states of the system going through other states<br><br> CAREFUL: a meander has to be placed between two circles, otherwise it will be ignored!  <br><br> Drag the handle to increase this meander's duration. <br> Drag this element on another one to put it on top of it.";
             } else {
                 event.target.style["cursor"] = "default";
+                textlog.innerHTML="Single element selection is disabled during playback";
+
             }
         }); 
         // CLICK INTERACTION
@@ -414,6 +427,9 @@ function drawMeander(){
                 SELECTED_ELEMENT = item_index;
                 //highlightBox(item_index); 
                 playBox( SELECTED_ELEMENT );
+                textlog.innerHTML="A meander is a transition between two states of the system going through other states<br><br> CAREFUL: a meander has to be placed between two circles, otherwise it will be ignored!  <br><br> Drag the handle to increase this meander's duration. <br> Drag this element on another one to put it on top of it.";
+            } else {
+                textlog.innerHTML="Single element selection is disabled during playback";
             }
         }); 
         // DRAG AND DROP INTERACTION
@@ -659,7 +675,10 @@ function playBox( box_n ){
 document.getElementById("insert-crossfade").addEventListener("mouseover", (event) => {
     if ( !ISPLAYBACKON ){
         highlightNone(); 
-        event.target.style["cursor"] = "pointer";        
+        event.target.style["cursor"] = "pointer";
+        textlog.innerHTML="insert a new crossfade";
+    } else {
+        textlog.innerHTML="you can't insert a new crossfade during playback";
     }
 }); 
 document.getElementById("insert-crossfade").addEventListener("click", (event) => {
@@ -667,6 +686,9 @@ document.getElementById("insert-crossfade").addEventListener("click", (event) =>
         SELECTED_ELEMENT = null;
         highlightNone(); 
         drawCrossfade();
+        textlog.innerHTML="inserting a new crossfade";
+    } else {
+        textlog.innerHTML="you can't insert a new crossfade during playback";
     }
 }); 
 
@@ -675,6 +697,9 @@ document.getElementById("insert-meander").addEventListener("mouseover", (event) 
     if ( !ISPLAYBACKON ){    
         highlightNone(); 
         event.target.style["cursor"] = "pointer";
+        textlog.innerHTML="insert a new meander";
+    } else {
+        textlog.innerHTML="you can't insert a new meander during playback";
     }
 }); 
 document.getElementById("insert-meander").addEventListener("click", (event) => {
@@ -682,6 +707,9 @@ document.getElementById("insert-meander").addEventListener("click", (event) => {
         SELECTED_ELEMENT = null;
         highlightNone(); 
         drawMeander();
+        textlog.innerHTML="inserting a new meander";
+    } else {
+        textlog.innerHTML="you can't insert a new meander during playback";
     }
 }); 
 
@@ -690,6 +718,9 @@ document.getElementById("bin").addEventListener("mouseover", (event) => {
     if ( !ISPLAYBACKON ){
         highlightNone(); 
         event.target.style["cursor"] = "pointer";
+        textlog.innerHTML="delete selected element";
+    } else {
+        textlog.innerHTML="you can't delete an element during playback";
     }
 }); 
 document.getElementById("bin").addEventListener("click", (event) => {
@@ -697,9 +728,14 @@ document.getElementById("bin").addEventListener("click", (event) => {
         if ( SELECTED_ELEMENT != null ){
             // trash the element
             removeElement(SELECTED_ELEMENT)
+            textlog.innerHTML="deleting selected element";
+        } else {
+            textlog.innerHTML="select an element to delete it";
         }
         SELECTED_ELEMENT = null;
         highlightNone(); 
+    } else {
+        textlog.innerHTML="you can't delete an element during playback";
     }
 }); 
 
@@ -737,6 +773,9 @@ document.getElementById("play").addEventListener("mouseover", (event) => {
     if ( !ISPLAYBACKON ){
         highlightAll(); 
         event.target.style["cursor"] = "pointer";
+        textlog.innerHTML="play the composition";
+    } else {
+        textlog.innerHTML="you can't play again during playback";
     }
 }); 
 document.getElementById("play").addEventListener("click", (event) => {
@@ -744,6 +783,9 @@ document.getElementById("play").addEventListener("click", (event) => {
         highlightNone(); 
         SELECTED_ELEMENT = null;
         play();
+        textlog.innerHTML="playing the composition";
+    } else {
+        textlog.innerHTML="you can't play again during playback";
     }
 }); 
 
@@ -803,11 +845,13 @@ function disableAllInteractions(){
 document.getElementById("stop").addEventListener("mouseover", (event) => {
     highlightNone(); 
     event.target.style["cursor"] = "pointer";
+    textlog.innerHTML="stop playback or recording";
 }); 
 document.getElementById("stop").addEventListener("click", (event) => {
     highlightNone(); 
     SELECTED_ELEMENT = null;
     stopPlayback();
+    textlog.innerHTML="stopping playback or recording";
 }); 
 
 var stopPlayback = function(){
@@ -854,30 +898,45 @@ function enableAllInteractions(){
 let ISRECORDING = false;
 let stoprecordingtimeout = undefined;
 document.getElementById("record").addEventListener("mouseover", (event) => {
-    highlightNone(); 
-    event.target.style["cursor"] = "pointer";
+    if ( !ISPLAYBACKON ){
+        highlightNone(); 
+        event.target.style["cursor"] = "pointer";
+        textlog.innerHTML="Record the whole composition.";
+    } else {
+        textlog.innerHTML="You can't record during playback.";
+    }
 }); 
 document.getElementById("record").addEventListener("click", (event) => {
-    highlightNone(); 
-    SELECTED_ELEMENT = null;
-    console.log('Starting recording');
-    sendStartrecording();
-    play();
-    ISRECORDING = true;
-    let maxrecordingduration = calculateCurrentCompostionTime();
-    stoprecordingtimeout = setTimeout(function() {
-        if( ISRECORDING ){
-            console.log('Stopping recording, file saved to disk');
-            sendStoprecording();
-            ISRECORDING = false;
-        }
-    }, maxrecordingduration+100);
+    if ( !ISPLAYBACKON ){
+        highlightNone(); 
+        SELECTED_ELEMENT = null;
+        console.log('Starting recording');
+        sendStartrecording();
+        play();
+        ISRECORDING = true;
+        let maxrecordingduration = calculateCurrentCompostionTime();
+        stoprecordingtimeout = setTimeout(function() {
+            if( ISRECORDING ){
+                console.log('Stopping recording, file saved to disk');
+                sendStoprecording();
+                ISRECORDING = false;
+            }
+        }, maxrecordingduration+100);
+        textlog.innerHTML="Recording the composition.";
+    } else {
+        textlog.innerHTML="You can't record during playback.";
+    }
 }); 
 
 // DOWNLOAD BUTTON
 document.getElementById("download").addEventListener("mouseover", (event) => {
-    highlightNone(); 
-    event.target.style["cursor"] = "pointer";
+    if ( !ISPLAYBACKON ){
+        highlightNone(); 
+        event.target.style["cursor"] = "pointer";
+        textlog.innerHTML="Download the composition as a JSON file.";
+    } else {
+        textlog.innerHTML="You can't download during playback.";
+    }
 }); 
 document.getElementById("download").addEventListener("click", (event) => {
     if ( !ISPLAYBACKON ){
@@ -903,7 +962,9 @@ document.getElementById("download").addEventListener("click", (event) => {
             URL.revokeObjectURL(link.href);
             link.parentNode.removeChild(link);
         }, 0);
-
+        textlog.innerHTML="Downloading the composition as a JSON file.";
+    } else {
+        textlog.innerHTML="You can't download during playback.";
     }
 }); 
 
@@ -912,6 +973,12 @@ document.getElementById("download").addEventListener("click", (event) => {
 // SCATTERPLOT HOVER
 document.getElementById("scatterPlot").addEventListener("mouseover", (event) => {
     highlightNone(); 
+    if ( SELECTED_ELEMENT != null ){
+        textlog.innerHTML="An object is selected. Click anywhere to go back to exploration.";
+    }
+    else {
+        textlog.innerHTML="Explore the cloud to listen to the different states of the system. <br> Click on a point to add the corresponding state to the composition bar. ";
+    }
 }); 
 
 let canClick = false;
@@ -925,6 +992,15 @@ var moveListener = function(){
 var upListener = function(){
     if ( mouseMoved ){
         // drag
+        if ( !ISPLAYBACKON ){
+            if ( SELECTED_ELEMENT != null ){
+                textlog.innerHTML="An object is selected. Click anywhere to go back to exploration.";
+            } else {
+                textlog.innerHTML="Explore the cloud to listen to the different states of the system. <br> Click on a point to add the corresponding state to the composition bar. ";
+            }
+        } else {
+            textlog.innerHTML="Selection is disabled during playback.";
+        }
     } else {
         if ( !ISPLAYBACKON ){
             // click
@@ -933,6 +1009,8 @@ var upListener = function(){
                 SELECTED_ELEMENT = null;
                 highlightNone(); 
                 sendStop();
+                textlog.innerHTML="An object is selected. Click anywhere to go back to exploration.";
+                
             } else {
                 // you can select a new point when there is no selected point already
                 canClick = true;
@@ -958,6 +1036,7 @@ function dragStart(e) {
     //console.log("dragging: ", e.target.id);
     e.dataTransfer.setData('text/plain', e.target.id);
     event.target.style["cursor"] = "grabbing";
+    textlog.innerHTML="dragging element. release it on another one to put this one on top of it in the compostion bar";
 }
 
 function dragEnter(e) {
@@ -1001,6 +1080,7 @@ function dragOver(e) {
     }
     event.target.style["cursor"] = "pointer";
     //e.target.classList.add('drag-over');
+
 }
 function dragLeave(e) {
     //e.target.classList.remove('drag-over');
@@ -1772,6 +1852,7 @@ let cursor_target_x = 20, cursor_target_y = 20, cursor_target_z = 20;
 var open_textlog = document.getElementById("open-textlog");
 var close_textlog = document.getElementById("close-textlog");
 var textlog = document.getElementById("textlog");
+var textlog_div = document.getElementById("text-logs");
 
 close_textlog.style.display = "none";
 textlog.style.display = "none";
@@ -1783,13 +1864,18 @@ open_textlog.onclick = function(){
     close_textlog.style.display = "block";
     textlog.style.display = "block";
     open_textlog.style.display = "none";
+    textlog_div.style["height"] = "300px";
+    textlog_div.style["width"] = "300px";
 }; 
 
 close_textlog.onclick = function(){
     close_textlog.style.display = "none";
     textlog.style.display = "none";
     open_textlog.style.display = "block";
+    textlog_div.style["height"] = "20px";
+    textlog_div.style["width"] = "20px";
 }; 
+
 
 
 

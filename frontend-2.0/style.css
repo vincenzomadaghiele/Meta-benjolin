@@ -42,6 +42,9 @@ body {
     z-index: 100;
     color: white;
     border: 1px solid white;
+    height: 20px;
+    width: 20px;
+    font-size: 15px;
     /*background-color: rgba(0, 128, 0, 0.2);
     outline-style: solid;
     outline-color: coral;*/
