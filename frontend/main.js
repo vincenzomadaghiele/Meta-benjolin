@@ -28,7 +28,40 @@ function graphicsOnResize() {
     timeline_pathArray[1][2] = window.innerHeight - (90 + 60 +50);
     path_timeline.attr({path: timeline_pathArray});
 
-    // update box sizes ?
+}
+
+// TIMELINE CURSOR 
+let verticalAnimationTimeouts = [];
+var timeline_vertical_cursor_global = undefined;
+function animateTimelineCursor( start_y, stop_y, animation_time ){
+    var timeline_vertical_cursor = R_timeline.circle( 25, start_y, 8 ).attr({
+        fill: "#FFFFFF",
+        "stroke-width": 10,
+        stroke: "transparent",
+        opacity: 0.8
+    });
+    // the interval at which the meander changes position
+    let animation_time_granularity = 200;
+    let cursortime = 0
+    let time_interval = animation_time / animation_time_granularity;
+    let space_interval = (stop_y-start_y) / animation_time_granularity;
+    //cursor = createCursor( cursor_x1, cursor_y1, cursor_z1 );
+    //scene.add(cursor);
+    for ( let i = 0; i < animation_time_granularity; i++ ) {
+        var animationCursorTimeout = setTimeout(function() {
+            let current_y_value = timeline_vertical_cursor.attr("cy");
+            current_y_value += space_interval;
+            timeline_vertical_cursor.attr("cy", current_y_value);
+            timeline_vertical_cursor_global = timeline_vertical_cursor;
+        }, cursortime );
+        cursortime += time_interval;
+        verticalAnimationTimeouts.push(animationCursorTimeout);
+    }
+    var animationCursorTimeout = setTimeout(function() {
+        timeline_vertical_cursor.remove();
+        timeline_vertical_cursor_global.remove();
+    }, cursortime );
+    verticalAnimationTimeouts.push(animationCursorTimeout);
 }
 
 
@@ -158,7 +191,11 @@ function drawBox(boxx, boxy, boxz, colorHue, arrayIndex){
                 }
                 for (var i = 0; i < crossfadePlaybackTimeouts.length; i++) {
                     clearTimeout(crossfadePlaybackTimeouts[i]);
-                }            
+                }
+                for (var i = 0; i < verticalAnimationTimeouts.length; i++) {
+                    clearTimeout(verticalAnimationTimeouts[i]);
+                    timeline_vertical_cursor_global.remove();
+                }
                 let item_index = Number(newBox.id.split(" ")[1])
                 SELECTED_ELEMENT = item_index;
                 //highlightBox( item_index ); 
@@ -283,7 +320,11 @@ function drawCrossfade(){
                 }   
                 for (var i = 0; i < crossfadePlaybackTimeouts.length; i++) {
                     clearTimeout(crossfadePlaybackTimeouts[i]);
-                }            
+                }
+                for (var i = 0; i < verticalAnimationTimeouts.length; i++) {
+                    clearTimeout(verticalAnimationTimeouts[i]);
+                    timeline_vertical_cursor_global.remove();
+                }
                 let item_index = Number(newBox.id.split(" ")[1])
                 SELECTED_ELEMENT = item_index;
                 //highlightBox(item_index); 
@@ -422,7 +463,11 @@ function drawMeander(){
                 }
                 for (var i = 0; i < crossfadePlaybackTimeouts.length; i++) {
                     clearTimeout(crossfadePlaybackTimeouts[i]);
-                }            
+                }
+                for (var i = 0; i < verticalAnimationTimeouts.length; i++) {
+                    clearTimeout(verticalAnimationTimeouts[i]);
+                    timeline_vertical_cursor_global.remove();
+                }
                 let item_index = Number(newBox.id.split(" ")[1])
                 SELECTED_ELEMENT = item_index;
                 //highlightBox(item_index); 
@@ -526,7 +571,11 @@ function highlightNone (){
         }
         for (var i = 0; i < crossfadePlaybackTimeouts.length; i++) {
             clearTimeout(crossfadePlaybackTimeouts[i]);
-        }    
+        }
+        for (var i = 0; i < verticalAnimationTimeouts.length; i++) {
+            clearTimeout(verticalAnimationTimeouts[i]);
+            timeline_vertical_cursor_global.remove();
+        }
         scene.remove(cursor);
     
     }
@@ -589,6 +638,7 @@ function loopCrossfade( box_n ){
     animateCrossfade( compositionArray[box_n-1].x,compositionArray[box_n-1].y,compositionArray[box_n-1].z,   
         compositionArray[box_n+1].x,compositionArray[box_n+1].y,compositionArray[box_n+1].z, 
         compositionArray[box_n].duration );
+    animateBoxVerticalCursor( box_n );
     var selectedBoxTimeout = setTimeout(function() {
         if ( SELECTED_ELEMENT != null ){
             loopCrossfade( box_n );
@@ -603,6 +653,7 @@ function loopMeander( box_n ){
         compositionArray[box_n+1].x, compositionArray[box_n+1].y, compositionArray[box_n+1].z, 
         compositionArray[box_n].duration / 1000);
     animateMeander( compositionArray[box_n].meanderComponents, compositionArray[box_n].duration );
+    animateBoxVerticalCursor( box_n );
     var selectedBoxTimeout = setTimeout(function() {
         if ( SELECTED_ELEMENT != null ){
             loopMeander( box_n );
@@ -611,19 +662,53 @@ function loopMeander( box_n ){
     singlePlaybackTimeouts.push(selectedBoxTimeout);
 }
 
+function loopBox( box_n ){
+    sendBox( compositionArray[box_n].x, compositionArray[box_n].y, compositionArray[box_n].z );
+    let cursor_x = Number(compositionArray[box_n].x) * scale_x - (scale_x/2),
+        cursor_y = Number(compositionArray[box_n].y) * scale_y - (scale_y/2),
+        cursor_z = Number(compositionArray[box_n].z) * scale_z - (scale_z/2);
+    cursor = createCursor( cursor_x, cursor_y, cursor_z );
+    scene.add(cursor);
+    animateBoxVerticalCursor( box_n );
+    var selectedBoxTimeout = setTimeout(function() {
+        if ( SELECTED_ELEMENT != null ){
+            loopBox( box_n );
+        } 
+    }, compositionArray[box_n].duration );
+    singlePlaybackTimeouts.push(selectedBoxTimeout);
+}
+
+function animateBoxVerticalCursor( box_n ){
+    let playbackduration = compositionArray[box_n].duration;
+    let cumulativeDuration = 0;
+    for (var i = 0; i < box_n; i++) {
+        cumulativeDuration += compositionArray[i].duration;
+    }
+    let mult_factor = 0.95;
+    let total_bar_length_px = (window.innerHeight - (90 + 60 + 20)) * mult_factor;
+    let start_px_y_bar = (cumulativeDuration) * total_bar_length_px / MAX_COMPOSITION_DURATION;
+    let stop_px_y_bar = (cumulativeDuration + compositionArray[box_n].duration) * total_bar_length_px / MAX_COMPOSITION_DURATION;
+    // calculate cumulative duration up to this box from composition array and divide by timeline length
+    animateTimelineCursor( start_px_y_bar, stop_px_y_bar, playbackduration );
+}
+
 function playBox( box_n ){
     // remove cursor
     scene.remove(cursor);
     if ( compositionArray[box_n] instanceof Box ){
         highlightBox( box_n );
-        sendBox( compositionArray[box_n].x, compositionArray[box_n].y, compositionArray[box_n].z );
-
-        let cursor_x = Number(compositionArray[box_n].x) * scale_x - (scale_x/2),
-            cursor_y = Number(compositionArray[box_n].y) * scale_y - (scale_y/2),
-            cursor_z = Number(compositionArray[box_n].z) * scale_z - (scale_z/2);
-        cursor = createCursor( cursor_x, cursor_y, cursor_z );
-        scene.add(cursor);
-        
+        if ( !ISPLAYBACKON ){
+            // loop the box
+            loopBox( box_n );
+        } else {
+            sendBox( compositionArray[box_n].x, compositionArray[box_n].y, compositionArray[box_n].z );
+            let cursor_x = Number(compositionArray[box_n].x) * scale_x - (scale_x/2),
+                cursor_y = Number(compositionArray[box_n].y) * scale_y - (scale_y/2),
+                cursor_z = Number(compositionArray[box_n].z) * scale_z - (scale_z/2);
+            cursor = createCursor( cursor_x, cursor_y, cursor_z );
+            scene.add(cursor);
+            animateBoxVerticalCursor( box_n );
+        }
     } else if ( box_n != 0 && compositionArray[box_n] instanceof Crossfade ) {
         // check if before and after there are boxes
         if (compositionArray[box_n-1] instanceof Box && compositionArray[box_n+1] instanceof Box){
@@ -641,6 +726,8 @@ function playBox( box_n ){
                 animateCrossfade( compositionArray[box_n-1].x,compositionArray[box_n-1].y,compositionArray[box_n-1].z,   
                                 compositionArray[box_n+1].x,compositionArray[box_n+1].y,compositionArray[box_n+1].z, 
                                 compositionArray[box_n].duration );
+                animateBoxVerticalCursor( box_n );
+
             }    
         } else {
             console.log('Crossfade can only by played if it is placed between two circles');
@@ -662,6 +749,7 @@ function playBox( box_n ){
                     compositionArray[box_n+1].x, compositionArray[box_n+1].y, compositionArray[box_n+1].z, 
                     compositionArray[box_n].duration / 1000);
                 animateMeander( compositionArray[box_n].meanderComponents, compositionArray[box_n].duration );
+                animateBoxVerticalCursor( box_n );
             }    
         } else {
             console.log('Meander can only by played if it placed is between two circles');
@@ -681,6 +769,7 @@ document.getElementById("insert-crossfade").addEventListener("mouseover", (event
         textlog.innerHTML="Insert a new crossfade. <br> A <b>crossfade</b> is a smooth transition between two states of the system. <br><br> Place the newly created crossfade between two circles.";
     } else {
         textlog.innerHTML="Insert crossfade function is disabled during playback.";
+        event.target.style["cursor"] = "default";
     }
 }); 
 document.getElementById("insert-crossfade").addEventListener("click", (event) => {
@@ -691,6 +780,7 @@ document.getElementById("insert-crossfade").addEventListener("click", (event) =>
         textlog.innerHTML="Insert a new crossfade. <br> A <b>crossfade</b> is a smooth transition between two states of the system. <br><br> Place the newly created crossfade between two circles.";
     } else {
         textlog.innerHTML="Insert crossfade function is disabled during playback.";
+        event.target.style["cursor"] = "default";
     }
 }); 
 
@@ -702,6 +792,8 @@ document.getElementById("insert-meander").addEventListener("mouseover", (event) 
         textlog.innerHTML="Insert a new meander. <br> A <b>meander</b> is a transition between two states of the system going through other states. <br><br> Place the newly created meander between two circles. ";
     } else {
         textlog.innerHTML="Insert meander function is disabled during playback.";
+        event.target.style["cursor"] = "default";
+
     }
 }); 
 document.getElementById("insert-meander").addEventListener("click", (event) => {
@@ -712,6 +804,7 @@ document.getElementById("insert-meander").addEventListener("click", (event) => {
         textlog.innerHTML="Insert a new meander. <br> A <b>meander</b> is a transition between two states of the system going through other states. <br><br> Place the newly created meander between two circles. ";
     } else {
         textlog.innerHTML="Insert meander function is disabled during playback.";
+        event.target.style["cursor"] = "default";
     }
 }); 
 
@@ -723,6 +816,8 @@ document.getElementById("bin").addEventListener("mouseover", (event) => {
         textlog.innerHTML="Delete selected element. ";
     } else {
         textlog.innerHTML="Delete element function is disabled during playback.";
+        event.target.style["cursor"] = "default";
+
     }
 }); 
 document.getElementById("bin").addEventListener("click", (event) => {
@@ -738,6 +833,8 @@ document.getElementById("bin").addEventListener("click", (event) => {
         highlightNone(); 
     } else {
         textlog.innerHTML="Delete element function is disabled during playback.";
+        event.target.style["cursor"] = "default";
+
     }
 }); 
 
@@ -778,6 +875,8 @@ document.getElementById("play").addEventListener("mouseover", (event) => {
         textlog.innerHTML="Play the whole composition.";
     } else {
         textlog.innerHTML="Playback function is already executing.";
+        event.target.style["cursor"] = "default";
+
     }
 }); 
 document.getElementById("play").addEventListener("click", (event) => {
@@ -788,6 +887,8 @@ document.getElementById("play").addEventListener("click", (event) => {
         textlog.innerHTML="Play the whole composition.";
     } else {
         textlog.innerHTML="Playback function is already executing.";
+        event.target.style["cursor"] = "default";
+
     }
 }); 
 
@@ -841,6 +942,10 @@ function disableAllInteractions(){
     for (var i = 0; i < crossfadePlaybackTimeouts.length; i++) {
         clearTimeout(crossfadePlaybackTimeouts[i]);
     }
+    for (var i = 0; i < verticalAnimationTimeouts.length; i++) {
+        clearTimeout(verticalAnimationTimeouts[i]);
+        timeline_vertical_cursor_global.remove();
+    }
 }
 
 // STOP BUTTON
@@ -869,6 +974,10 @@ var stopPlayback = function(){
     }
     for (var i = 0; i < crossfadePlaybackTimeouts.length; i++) {
         clearTimeout(crossfadePlaybackTimeouts[i]);
+    }
+    for (var i = 0; i < verticalAnimationTimeouts.length; i++) {
+        clearTimeout(verticalAnimationTimeouts[i]);
+        timeline_vertical_cursor_global.remove();
     }
     //sendStop();
     SELECTED_ELEMENT = null;
@@ -906,6 +1015,8 @@ document.getElementById("record").addEventListener("mouseover", (event) => {
         textlog.innerHTML="Record the whole composition. An audio recording of the composition will be saved to the disk.";
     } else {
         textlog.innerHTML="Recording function is disabled during playback.";
+        event.target.style["cursor"] = "default";
+
     }
 }); 
 document.getElementById("record").addEventListener("click", (event) => {
@@ -927,6 +1038,8 @@ document.getElementById("record").addEventListener("click", (event) => {
         textlog.innerHTML="Record the whole composition. An audio recording of the composition will be saved to the disk.";
     } else {
         textlog.innerHTML="Recording function is disabled during playback.";
+        event.target.style["cursor"] = "default";
+
     }
 }); 
 
@@ -938,6 +1051,8 @@ document.getElementById("download").addEventListener("mouseover", (event) => {
         textlog.innerHTML="Download the composition as a JSON file.";
     } else {
         textlog.innerHTML="You can't download during playback.";
+        event.target.style["cursor"] = "default";
+
     }
 }); 
 document.getElementById("download").addEventListener("click", (event) => {
@@ -967,6 +1082,8 @@ document.getElementById("download").addEventListener("click", (event) => {
         textlog.innerHTML="Downloading the composition as a JSON file.";
     } else {
         textlog.innerHTML="Download function is disabled during playback.";
+        event.target.style["cursor"] = "default";
+
     }
 }); 
 
@@ -1013,7 +1130,7 @@ var upListener = function(){
                 SELECTED_ELEMENT = null;
                 highlightNone(); 
                 sendStop();
-                textlog.innerHTML="An object is selected. Click anywhere to go back to exploration.";
+                textlog.innerHTML="Explore the cloud to listen to the different states of the system. <br><br> Click on a point to add the corresponding state to the composition bar. <br> A state is represented as a circle in the composition bar. ";
                 
             } else {
                 // you can select a new point when there is no selected point already
@@ -1300,7 +1417,7 @@ function init() {
     controls.screenSpacePanning = false;
     controls.minDistance = 1;
     controls.maxDistance = 1500;
-    controls.maxPolarAngle = Math.PI / 2;
+    //controls.maxPolarAngle = Math.PI / 2;
 
     // RENDERING POINTS AS CIRCLES
 	//const sprite = new THREE.TextureLoader().load( 'imgs/disc.png' );
@@ -1871,7 +1988,7 @@ open_textlog.onclick = function(){
     close_textlog.style.display = "block";
     textlog.style.display = "block";
     open_textlog.style.display = "none";
-    textlog_div.style["height"] = "400px";
+    textlog_div.style["height"] = "350px";
     textlog_div.style["width"] = "300px";
 }; 
 
