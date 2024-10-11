@@ -22,28 +22,46 @@ var timeline_pathArray = path_timeline.attr("path");
 window.addEventListener( 'resize', graphicsOnResize );
 
 
-var marker1_text = R_timeline.text(43, 10, "0.00 s").attr({fill: '#FFFFFF', stroke: '#FFFFFF', 'font-size':10, opacity: 0.5});
+var marker1_text = R_timeline.text(43, 10, "0 s").attr({fill: '#FFFFFF', stroke: '#FFFFFF', 'font-size':10, opacity: 0.5});
 var marker1_path = R_timeline.path( "M15 0L35 0 ").attr({stroke: '#FFFFFF','stroke-width': 1.2, opacity: 0.5});
 
+var marker12_path = R_timeline.path( "M20 "+(verticaltimelineheight/12)+"L30 "+(verticaltimelineheight/12)).attr({stroke: '#FFFFFF','stroke-width': 1.2, opacity: 0.5});
+var marker12_pathArray = marker12_path.attr("path");
+
 var marker2_text = R_timeline.text(43, verticaltimelineheight/6, "10 s").attr({fill: '#FFFFFF', stroke: '#FFFFFF', 'font-size':10, opacity: 0.5});
-var marker2_path = R_timeline.path( "M20 "+(verticaltimelineheight/6+15)+"L30 "+(verticaltimelineheight/6+15)).attr({stroke: '#FFFFFF','stroke-width': 1.2, opacity: 0.5});
+var marker2_path = R_timeline.path( "M20 "+(verticaltimelineheight/6)+"L30 "+(verticaltimelineheight/6)).attr({stroke: '#FFFFFF','stroke-width': 1.2, opacity: 0.5});
 var marker2_pathArray = marker2_path.attr("path");
 
+var marker22_path = R_timeline.path( "M20 "+(verticaltimelineheight*3/12)+"L30 "+(verticaltimelineheight*3/12)).attr({stroke: '#FFFFFF','stroke-width': 1.2, opacity: 0.5});
+var marker22_pathArray = marker22_path.attr("path");
+
 var marker3_text = R_timeline.text(43, verticaltimelineheight/6*2, "20 s").attr({fill: '#FFFFFF', stroke: '#FFFFFF', 'font-size':10, opacity: 0.5});
-var marker3_path = R_timeline.path( "M15 "+(verticaltimelineheight*2/6+15)+"L35 "+(verticaltimelineheight*2/6+15)).attr({stroke: '#FFFFFF','stroke-width': 1.2, opacity: 0.5});
+var marker3_path = R_timeline.path( "M15 "+(verticaltimelineheight*2/6)+"L35 "+(verticaltimelineheight*2/6)).attr({stroke: '#FFFFFF','stroke-width': 1.2, opacity: 0.5});
 var marker3_pathArray = marker3_path.attr("path");
 
+var marker32_path = R_timeline.path( "M20 "+(verticaltimelineheight*5/12)+"L30 "+(verticaltimelineheight*5/12)).attr({stroke: '#FFFFFF','stroke-width': 1.2, opacity: 0.5});
+var marker32_pathArray = marker32_path.attr("path");
+
 var marker4_text = R_timeline.text(43, verticaltimelineheight/6*3, "30 s").attr({fill: '#FFFFFF', stroke: '#FFFFFF', 'font-size':10, opacity: 0.5});
-var marker4_path = R_timeline.path( "M20 "+(verticaltimelineheight*3/6+15)+"L30 "+(verticaltimelineheight*3/6+15)).attr({stroke: '#FFFFFF','stroke-width': 1.2, opacity: 0.5});
+var marker4_path = R_timeline.path( "M20 "+(verticaltimelineheight*3/6)+"L30 "+(verticaltimelineheight*3/6)).attr({stroke: '#FFFFFF','stroke-width': 1.2, opacity: 0.5});
 var marker4_pathArray = marker4_path.attr("path");
 
+var marker42_path = R_timeline.path( "M20 "+(verticaltimelineheight*7/12)+"L30 "+(verticaltimelineheight*7/12)).attr({stroke: '#FFFFFF','stroke-width': 1.2, opacity: 0.5});
+var marker42_pathArray = marker42_path.attr("path");
+
 var marker5_text = R_timeline.text(43, verticaltimelineheight/6*4, "40 s").attr({fill: '#FFFFFF', stroke: '#FFFFFF', 'font-size':10, opacity: 0.5});
-var marker5_path = R_timeline.path( "M15 "+(verticaltimelineheight*4/6+15)+"L35 "+(verticaltimelineheight*4/6+15)).attr({stroke: '#FFFFFF','stroke-width': 1.2, opacity: 0.5});
+var marker5_path = R_timeline.path( "M15 "+(verticaltimelineheight*4/6)+"L35 "+(verticaltimelineheight*4/6)).attr({stroke: '#FFFFFF','stroke-width': 1.2, opacity: 0.5});
 var marker5_pathArray = marker5_path.attr("path");
 
+var marker52_path = R_timeline.path( "M20 "+(verticaltimelineheight*9/12)+"L30 "+(verticaltimelineheight*9/12)).attr({stroke: '#FFFFFF','stroke-width': 1.2, opacity: 0.5});
+var marker52_pathArray = marker52_path.attr("path");
+
 var marker6_text = R_timeline.text(43, verticaltimelineheight/6*5, "50 s").attr({fill: '#FFFFFF', stroke: '#FFFFFF', 'font-size':10, opacity: 0.5});
-var marker6_path = R_timeline.path( "M20 "+(verticaltimelineheight*5/6+15)+"L30 "+(verticaltimelineheight*5/6+15)).attr({stroke: '#FFFFFF','stroke-width': 1.2, opacity: 0.5});
+var marker6_path = R_timeline.path( "M20 "+(verticaltimelineheight*5/6)+"L30 "+(verticaltimelineheight*5/6)).attr({stroke: '#FFFFFF','stroke-width': 1.2, opacity: 0.5});
 var marker6_pathArray = marker6_path.attr("path");
+
+var marker62_path = R_timeline.path( "M20 "+(verticaltimelineheight*11/12)+"L30 "+(verticaltimelineheight*11/12)).attr({stroke: '#FFFFFF','stroke-width': 1.2, opacity: 0.5});
+var marker62_pathArray = marker62_path.attr("path");
 
 var marker7_text = R_timeline.text(43, verticaltimelineheight-25, "60 s").attr({fill: '#FFFFFF', stroke: '#FFFFFF', 'font-size':10, opacity: 0.5});
 var marker7_path = R_timeline.path( "M15 "+(verticaltimelineheight-10)+"L35 "+(verticaltimelineheight-10)).attr({stroke: '#FFFFFF','stroke-width': 1.2, opacity: 0.5});
@@ -54,33 +72,33 @@ var marker7_pathArray = marker7_path.attr("path");
 function graphicsOnResize() {
     // update timeline
     let new_timeline_height = window.innerHeight - (90 + 60 + 20);
-    R_timeline.setSize(50, new_timeline_height);
+    R_timeline.setSize(100, new_timeline_height);
     //path_timeline.attr({});
     timeline_pathArray[1][2] = new_timeline_height;
     path_timeline.attr({path: timeline_pathArray});
 
-    marker2_pathArray[0][2] = new_timeline_height/6+15;
-    marker2_pathArray[1][2] = new_timeline_height/6+15;
+    marker2_pathArray[0][2] = new_timeline_height/6;
+    marker2_pathArray[1][2] = new_timeline_height/6;
     marker2_path.attr({path: marker2_pathArray});
     marker2_text.attr({y: new_timeline_height/6 });
 
-    marker3_pathArray[0][2] = new_timeline_height*2/6+15;
-    marker3_pathArray[1][2] = new_timeline_height*2/6+15;
+    marker3_pathArray[0][2] = new_timeline_height*2/6;
+    marker3_pathArray[1][2] = new_timeline_height*2/6;
     marker3_path.attr({path: marker3_pathArray});
     marker3_text.attr({y: new_timeline_height*2/6 });
 
-    marker4_pathArray[0][2] = new_timeline_height*3/6+15;
-    marker4_pathArray[1][2] = new_timeline_height*3/6+15;
+    marker4_pathArray[0][2] = new_timeline_height*3/6;
+    marker4_pathArray[1][2] = new_timeline_height*3/6;
     marker4_path.attr({path: marker4_pathArray});
     marker4_text.attr({y: new_timeline_height*3/6 });
 
-    marker5_pathArray[0][2] = new_timeline_height*4/6+15;
-    marker5_pathArray[1][2] = new_timeline_height*4/6+15;
+    marker5_pathArray[0][2] = new_timeline_height*4/6;
+    marker5_pathArray[1][2] = new_timeline_height*4/6;
     marker5_path.attr({path: marker5_pathArray});
     marker5_text.attr({y: new_timeline_height*4/6 });
 
-    marker6_pathArray[0][2] = new_timeline_height*5/6+15;
-    marker6_pathArray[1][2] = new_timeline_height*5/6+15;
+    marker6_pathArray[0][2] = new_timeline_height*5/6;
+    marker6_pathArray[1][2] = new_timeline_height*5/6;
     marker6_path.attr({path: marker6_pathArray});
     marker6_text.attr({y: new_timeline_height*5/6 });
 
@@ -88,6 +106,31 @@ function graphicsOnResize() {
     marker7_pathArray[1][2] = new_timeline_height-10;
     marker7_path.attr({path: marker7_pathArray});
     marker7_text.attr({y: new_timeline_height-25 });
+
+
+    marker12_pathArray[0][2] = new_timeline_height/12;
+    marker12_pathArray[1][2] = new_timeline_height/12;
+    marker12_path.attr({path: marker12_pathArray});
+
+    marker22_pathArray[0][2] = new_timeline_height*3/12;
+    marker22_pathArray[1][2] = new_timeline_height*3/12;
+    marker22_path.attr({path: marker32_pathArray});
+
+    marker32_pathArray[0][2] = new_timeline_height*5/12;
+    marker32_pathArray[1][2] = new_timeline_height*5/12;
+    marker32_path.attr({path: marker32_pathArray});
+
+    marker42_pathArray[0][2] = new_timeline_height*7/12;
+    marker42_pathArray[1][2] = new_timeline_height*7/12;
+    marker42_path.attr({path: marker42_pathArray});
+
+    marker52_pathArray[0][2] = new_timeline_height*9/12;
+    marker52_pathArray[1][2] = new_timeline_height*9/12;
+    marker52_path.attr({path: marker52_pathArray});
+
+    marker62_pathArray[0][2] = new_timeline_height*11/12;
+    marker62_pathArray[1][2] = new_timeline_height*11/12;
+    marker62_path.attr({path: marker62_pathArray});
 
 }
 
