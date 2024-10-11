@@ -35,7 +35,7 @@ var marker2_pathArray = marker2_path.attr("path");
 var marker22_path = R_timeline.path( "M20 "+(verticaltimelineheight*3/12)+"L30 "+(verticaltimelineheight*3/12)).attr({stroke: '#FFFFFF','stroke-width': 1.2, opacity: 0.5});
 var marker22_pathArray = marker22_path.attr("path");
 
-var marker3_text = R_timeline.text(43, verticaltimelineheight/6*2, "20 s").attr({fill: '#FFFFFF', stroke: '#FFFFFF', 'font-size':10, opacity: 0.5});
+var marker3_text = R_timeline.text(43, verticaltimelineheight/6*2-10, "20 s").attr({fill: '#FFFFFF', stroke: '#FFFFFF', 'font-size':10, opacity: 0.5});
 var marker3_path = R_timeline.path( "M15 "+(verticaltimelineheight*2/6)+"L35 "+(verticaltimelineheight*2/6)).attr({stroke: '#FFFFFF','stroke-width': 1.2, opacity: 0.5});
 var marker3_pathArray = marker3_path.attr("path");
 
@@ -49,7 +49,7 @@ var marker4_pathArray = marker4_path.attr("path");
 var marker42_path = R_timeline.path( "M20 "+(verticaltimelineheight*7/12)+"L30 "+(verticaltimelineheight*7/12)).attr({stroke: '#FFFFFF','stroke-width': 1.2, opacity: 0.5});
 var marker42_pathArray = marker42_path.attr("path");
 
-var marker5_text = R_timeline.text(43, verticaltimelineheight/6*4, "40 s").attr({fill: '#FFFFFF', stroke: '#FFFFFF', 'font-size':10, opacity: 0.5});
+var marker5_text = R_timeline.text(43, verticaltimelineheight/6*4-10, "40 s").attr({fill: '#FFFFFF', stroke: '#FFFFFF', 'font-size':10, opacity: 0.5});
 var marker5_path = R_timeline.path( "M15 "+(verticaltimelineheight*4/6)+"L35 "+(verticaltimelineheight*4/6)).attr({stroke: '#FFFFFF','stroke-width': 1.2, opacity: 0.5});
 var marker5_pathArray = marker5_path.attr("path");
 
@@ -85,7 +85,7 @@ function graphicsOnResize() {
     marker3_pathArray[0][2] = new_timeline_height*2/6;
     marker3_pathArray[1][2] = new_timeline_height*2/6;
     marker3_path.attr({path: marker3_pathArray});
-    marker3_text.attr({y: new_timeline_height*2/6 });
+    marker3_text.attr({y: new_timeline_height*2/6 -10});
 
     marker4_pathArray[0][2] = new_timeline_height*3/6;
     marker4_pathArray[1][2] = new_timeline_height*3/6;
@@ -95,7 +95,7 @@ function graphicsOnResize() {
     marker5_pathArray[0][2] = new_timeline_height*4/6;
     marker5_pathArray[1][2] = new_timeline_height*4/6;
     marker5_path.attr({path: marker5_pathArray});
-    marker5_text.attr({y: new_timeline_height*4/6 });
+    marker5_text.attr({y: new_timeline_height*4/6 -10});
 
     marker6_pathArray[0][2] = new_timeline_height*5/6;
     marker6_pathArray[1][2] = new_timeline_height*5/6;
@@ -114,7 +114,7 @@ function graphicsOnResize() {
 
     marker22_pathArray[0][2] = new_timeline_height*3/12;
     marker22_pathArray[1][2] = new_timeline_height*3/12;
-    marker22_path.attr({path: marker32_pathArray});
+    marker22_path.attr({path: marker22_pathArray});
 
     marker32_pathArray[0][2] = new_timeline_height*5/12;
     marker32_pathArray[1][2] = new_timeline_height*5/12;
@@ -1221,6 +1221,35 @@ document.getElementById("download").addEventListener("click", (event) => {
     }
 }); 
 
+document.getElementById("remove-all").addEventListener("mouseover", (event) => {
+    if ( !ISPLAYBACKON ){
+        highlightNone(); 
+        event.target.style["cursor"] = "pointer";
+        textlog.innerHTML="Remove all composition and start from scratch.";
+    } else {
+        textlog.innerHTML="Insert crossfade function is disabled during playback.";
+        event.target.style["cursor"] = "default";
+    }
+}); 
+document.getElementById("remove-all").addEventListener("click", (event) => {
+    if ( !ISPLAYBACKON ){
+        SELECTED_ELEMENT = null;
+        highlightNone(); 
+        removeAll();
+        textlog.innerHTML="Remove all composition and start from scratch.";
+    } else {
+        textlog.innerHTML="Remove all function is disabled during playback.";
+        event.target.style["cursor"] = "default";
+    }
+}); 
+
+function removeAll(){
+    // erase composition array
+    // remove points from scatterplot
+    // divs from composition bar
+    // remove all raphaels
+    // all counts to 0
+}
 
 
 // SCATTERPLOT HOVER
