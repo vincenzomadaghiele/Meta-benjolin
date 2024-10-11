@@ -10,8 +10,9 @@ let raphaels = [];
 
 
 // DRAW TIMELINE
-var R_timeline = Raphael("timeline", 50, window.innerHeight - (90 + 60 + 20) );
-var path_timeline = R_timeline.path("M25 0L25 "+(window.innerHeight - (90 + 60 +50))).attr({
+var verticaltimelineheight = window.innerHeight - (90 + 60 + 20);
+var R_timeline = Raphael("timeline", 100, verticaltimelineheight );
+var path_timeline = R_timeline.path("M25 0L25 "+(verticaltimelineheight)).attr({
     stroke: '#FFFFFF',
     'stroke-width': 1,
     'arrow-end':'classic-wide-long',
@@ -20,13 +21,73 @@ var path_timeline = R_timeline.path("M25 0L25 "+(window.innerHeight - (90 + 60 +
 var timeline_pathArray = path_timeline.attr("path");
 window.addEventListener( 'resize', graphicsOnResize );
 
+
+var marker1_text = R_timeline.text(43, 10, "0.00 s").attr({fill: '#FFFFFF', stroke: '#FFFFFF', 'font-size':10, opacity: 0.5});
+var marker1_path = R_timeline.path( "M15 0L35 0 ").attr({stroke: '#FFFFFF','stroke-width': 1.2, opacity: 0.5});
+
+var marker2_text = R_timeline.text(43, verticaltimelineheight/6, "10 s").attr({fill: '#FFFFFF', stroke: '#FFFFFF', 'font-size':10, opacity: 0.5});
+var marker2_path = R_timeline.path( "M20 "+(verticaltimelineheight/6+15)+"L30 "+(verticaltimelineheight/6+15)).attr({stroke: '#FFFFFF','stroke-width': 1.2, opacity: 0.5});
+var marker2_pathArray = marker2_path.attr("path");
+
+var marker3_text = R_timeline.text(43, verticaltimelineheight/6*2, "20 s").attr({fill: '#FFFFFF', stroke: '#FFFFFF', 'font-size':10, opacity: 0.5});
+var marker3_path = R_timeline.path( "M15 "+(verticaltimelineheight*2/6+15)+"L35 "+(verticaltimelineheight*2/6+15)).attr({stroke: '#FFFFFF','stroke-width': 1.2, opacity: 0.5});
+var marker3_pathArray = marker3_path.attr("path");
+
+var marker4_text = R_timeline.text(43, verticaltimelineheight/6*3, "30 s").attr({fill: '#FFFFFF', stroke: '#FFFFFF', 'font-size':10, opacity: 0.5});
+var marker4_path = R_timeline.path( "M20 "+(verticaltimelineheight*3/6+15)+"L30 "+(verticaltimelineheight*3/6+15)).attr({stroke: '#FFFFFF','stroke-width': 1.2, opacity: 0.5});
+var marker4_pathArray = marker4_path.attr("path");
+
+var marker5_text = R_timeline.text(43, verticaltimelineheight/6*4, "40 s").attr({fill: '#FFFFFF', stroke: '#FFFFFF', 'font-size':10, opacity: 0.5});
+var marker5_path = R_timeline.path( "M15 "+(verticaltimelineheight*4/6+15)+"L35 "+(verticaltimelineheight*4/6+15)).attr({stroke: '#FFFFFF','stroke-width': 1.2, opacity: 0.5});
+var marker5_pathArray = marker5_path.attr("path");
+
+var marker6_text = R_timeline.text(43, verticaltimelineheight/6*5, "50 s").attr({fill: '#FFFFFF', stroke: '#FFFFFF', 'font-size':10, opacity: 0.5});
+var marker6_path = R_timeline.path( "M20 "+(verticaltimelineheight*5/6+15)+"L30 "+(verticaltimelineheight*5/6+15)).attr({stroke: '#FFFFFF','stroke-width': 1.2, opacity: 0.5});
+var marker6_pathArray = marker6_path.attr("path");
+
+var marker7_text = R_timeline.text(43, verticaltimelineheight-25, "60 s").attr({fill: '#FFFFFF', stroke: '#FFFFFF', 'font-size':10, opacity: 0.5});
+var marker7_path = R_timeline.path( "M15 "+(verticaltimelineheight-10)+"L35 "+(verticaltimelineheight-10)).attr({stroke: '#FFFFFF','stroke-width': 1.2, opacity: 0.5});
+var marker7_pathArray = marker7_path.attr("path");
+
+
 // UPDATE WINDOW SIZE
 function graphicsOnResize() {
     // update timeline
-    R_timeline.setSize(50, window.innerHeight - (90 + 60 + 20));
+    let new_timeline_height = window.innerHeight - (90 + 60 + 20);
+    R_timeline.setSize(50, new_timeline_height);
     //path_timeline.attr({});
-    timeline_pathArray[1][2] = window.innerHeight - (90 + 60 +50);
+    timeline_pathArray[1][2] = new_timeline_height;
     path_timeline.attr({path: timeline_pathArray});
+
+    marker2_pathArray[0][2] = new_timeline_height/6+15;
+    marker2_pathArray[1][2] = new_timeline_height/6+15;
+    marker2_path.attr({path: marker2_pathArray});
+    marker2_text.attr({y: new_timeline_height/6 });
+
+    marker3_pathArray[0][2] = new_timeline_height*2/6+15;
+    marker3_pathArray[1][2] = new_timeline_height*2/6+15;
+    marker3_path.attr({path: marker3_pathArray});
+    marker3_text.attr({y: new_timeline_height*2/6 });
+
+    marker4_pathArray[0][2] = new_timeline_height*3/6+15;
+    marker4_pathArray[1][2] = new_timeline_height*3/6+15;
+    marker4_path.attr({path: marker4_pathArray});
+    marker4_text.attr({y: new_timeline_height*3/6 });
+
+    marker5_pathArray[0][2] = new_timeline_height*4/6+15;
+    marker5_pathArray[1][2] = new_timeline_height*4/6+15;
+    marker5_path.attr({path: marker5_pathArray});
+    marker5_text.attr({y: new_timeline_height*4/6 });
+
+    marker6_pathArray[0][2] = new_timeline_height*5/6+15;
+    marker6_pathArray[1][2] = new_timeline_height*5/6+15;
+    marker6_path.attr({path: marker6_pathArray});
+    marker6_text.attr({y: new_timeline_height*5/6 });
+
+    marker7_pathArray[0][2] = new_timeline_height-10;
+    marker7_pathArray[1][2] = new_timeline_height-10;
+    marker7_path.attr({path: marker7_pathArray});
+    marker7_text.attr({y: new_timeline_height-25 });
 
 }
 
@@ -68,6 +129,7 @@ function animateTimelineCursor( start_y, stop_y, animation_time ){
 // INTERACTION FLAGS
 var SELECTED_ELEMENT = null;
 var ISPLAYBACKON = false;
+var COMPOSITION_BAR_ISFULL = false;
 let QUEUED_TIMEOUTS = []; // all timeouts queued for playback
 
 // COMPOSITION TIMINGS
@@ -123,7 +185,6 @@ class Crossfade{
 }
 
 const compositionArray = [];
-
 let numBoxes = 0;
 function calculateCurrentCompostionTime(){
     let compositionTime = 0;
@@ -139,6 +200,7 @@ function calculateCurrentCompostionTime(){
 function drawBox(boxx, boxy, boxz, colorHue, arrayIndex){
     let compositionTime = calculateCurrentCompostionTime();
     if ( compositionTime < MAX_COMPOSITION_DURATION){
+        COMPOSITION_BAR_ISFULL = false;
 
         let newBox = document.createElement("div");
         newBox.id = "box "+numBoxes;
@@ -217,6 +279,12 @@ function drawBox(boxx, boxy, boxz, colorHue, arrayIndex){
 
         numBoxes += 1;
         raphaels.push(R);
+
+        let compositionTime = calculateCurrentCompostionTime();
+        if ( compositionTime >= MAX_COMPOSITION_DURATION){ COMPOSITION_BAR_ISFULL = true ; } else { COMPOSITION_BAR_ISFULL = false ; }
+
+    } else {
+        COMPOSITION_BAR_ISFULL = true;
     }
     renderPath();
 }
@@ -259,6 +327,9 @@ var up = function () {
         this.sized.attr({opacity: .8 });
         let compositionIndex = Number(this.parentDiv.id.split(" ")[1]);
         compositionArray[compositionIndex].duration = pxHeightToTimesMs(this.attr("r"));
+
+        let compositionTime = calculateCurrentCompostionTime();
+        if ( compositionTime >= MAX_COMPOSITION_DURATION){ COMPOSITION_BAR_ISFULL = true ; } else { COMPOSITION_BAR_ISFULL = false ; }
     }
 }
 
@@ -266,6 +337,7 @@ var up = function () {
 function drawCrossfade(){
     let compositionTime = calculateCurrentCompostionTime();
     if ( compositionTime < MAX_COMPOSITION_DURATION){
+        COMPOSITION_BAR_ISFULL = false;
 
         let newBox = document.createElement("div");
         newBox.id = "box "+numBoxes;
@@ -346,6 +418,12 @@ function drawCrossfade(){
 
         numBoxes += 1;
         raphaels.push(R);
+
+        let compositionTime = calculateCurrentCompostionTime();
+        if ( compositionTime >= MAX_COMPOSITION_DURATION){ COMPOSITION_BAR_ISFULL = true ; } else { COMPOSITION_BAR_ISFULL = false ; }
+
+    } else {
+        COMPOSITION_BAR_ISFULL = true;
     }
     renderPath();
 }
@@ -377,6 +455,9 @@ var up_crossfade = function () {
         this.attr({opacity: 0.3});
         let compositionIndex = Number(this.parentDiv.id.split(" ")[1]);
         compositionArray[compositionIndex].duration = pxHeightToTimesMs(this.attr("cy"));
+        let compositionTime = calculateCurrentCompostionTime();
+        if ( compositionTime >= MAX_COMPOSITION_DURATION){ COMPOSITION_BAR_ISFULL = true ; } else { COMPOSITION_BAR_ISFULL = false ; }
+
     }
 };
 
@@ -384,6 +465,7 @@ var up_crossfade = function () {
 function drawMeander(){
     let compositionTime = calculateCurrentCompostionTime();
     if ( compositionTime < MAX_COMPOSITION_DURATION){
+        COMPOSITION_BAR_ISFULL = false;
 
         let newBox = document.createElement("div");
         newBox.id = "box "+numBoxes;
@@ -490,6 +572,12 @@ function drawMeander(){
 
         numBoxes += 1;
         raphaels.push(R);
+
+        let compositionTime = calculateCurrentCompostionTime();
+        if ( compositionTime >= MAX_COMPOSITION_DURATION){ COMPOSITION_BAR_ISFULL = true ; } else { COMPOSITION_BAR_ISFULL = false ; }
+
+    } else {
+        COMPOSITION_BAR_ISFULL = true;
     }
     renderPath();
 }
@@ -529,6 +617,8 @@ var up_meander = function () {
         this.attr({opacity: 0.3});
         let compositionIndex = Number(this.parentDiv.id.split(" ")[1]);
         compositionArray[compositionIndex].duration = pxHeightToTimesMs(this.attr("cy"));
+        let compositionTime = calculateCurrentCompostionTime();
+        if ( compositionTime >= MAX_COMPOSITION_DURATION){ COMPOSITION_BAR_ISFULL = true ; } else { COMPOSITION_BAR_ISFULL = false ; }
     }
 };
 
@@ -834,8 +924,9 @@ document.getElementById("bin").addEventListener("click", (event) => {
     } else {
         textlog.innerHTML="Delete element function is disabled during playback.";
         event.target.style["cursor"] = "default";
-
     }
+    let compositionTime = calculateCurrentCompostionTime();
+    if ( compositionTime >= MAX_COMPOSITION_DURATION){ COMPOSITION_BAR_ISFULL = true ; } else { COMPOSITION_BAR_ISFULL = false ; }
 }); 
 
 function removeElement(element_index){
@@ -1096,9 +1187,12 @@ document.getElementById("scatterPlot").addEventListener("mouseover", (event) => 
         if ( !ISPLAYBACKON ){
             textlog.innerHTML="An object is selected. Click anywhere to go back to exploration.";
         }
-    }
-    else {
-        textlog.innerHTML="Explore the cloud to listen to the different states of the system. <br><br> Click on a point to add the corresponding state to the composition bar. <br> A state is represented as a circle in the composition bar. ";
+    } else {
+        if ( COMPOSITION_BAR_ISFULL ){
+            textlog.innerHTML="The maximum composition time has been reached, it is not possible to add more elements to the composition bar. <br><br> Delete an element to modify the composition. ";
+        } else {
+            textlog.innerHTML="Explore the cloud to listen to the different states of the system. <br><br> Click on a point to add the corresponding state to the composition bar. <br> A state is represented as a circle in the composition bar. ";
+        }
     }
 }); 
 
@@ -1117,7 +1211,11 @@ var upListener = function(){
             if ( SELECTED_ELEMENT != null ){
                 textlog.innerHTML="An object is selected. Click anywhere to go back to exploration.";
             } else {
-                textlog.innerHTML="Explore the cloud to listen to the different states of the system. <br><br> Click on a point to add the corresponding state to the composition bar. <br> A state is represented as a circle in the composition bar. ";
+                if ( COMPOSITION_BAR_ISFULL ){
+                    textlog.innerHTML="The maximum composition time has been reached, it is not possible to add more elements to the composition bar. <br><br> Delete an element to modify the composition. ";
+                } else {
+                    textlog.innerHTML="Explore the cloud to listen to the different states of the system. <br><br> Click on a point to add the corresponding state to the composition bar. <br> A state is represented as a circle in the composition bar. ";
+                }
             }
         } else {
             textlog.innerHTML="Selection is disabled during playback.";
@@ -1130,11 +1228,21 @@ var upListener = function(){
                 SELECTED_ELEMENT = null;
                 highlightNone(); 
                 sendStop();
-                textlog.innerHTML="Explore the cloud to listen to the different states of the system. <br><br> Click on a point to add the corresponding state to the composition bar. <br> A state is represented as a circle in the composition bar. ";
+                if ( COMPOSITION_BAR_ISFULL ){
+                    textlog.innerHTML="The maximum composition time has been reached, it is not possible to add more elements to the composition bar. <br><br> Delete an element to modify the composition. ";
+                } else {
+                    textlog.innerHTML="Explore the cloud to listen to the different states of the system. <br><br> Click on a point to add the corresponding state to the composition bar. <br> A state is represented as a circle in the composition bar. ";
+                }
                 
             } else {
                 // you can select a new point when there is no selected point already
                 canClick = true;
+                if ( COMPOSITION_BAR_ISFULL ){
+                    textlog.innerHTML="The maximum composition time has been reached, it is not possible to add more elements to the composition bar. <br><br> Delete an element to modify the composition. ";
+                } else {
+                    textlog.innerHTML="Explore the cloud to listen to the different states of the system. <br><br> Click on a point to add the corresponding state to the composition bar. <br> A state is represented as a circle in the composition bar. ";
+                }
+
             }
         }
     }
@@ -1537,7 +1645,6 @@ class PickHelper {
             this.pickedObject = undefined;
             this.pickedObjectIndex = undefined;
         }
-        
         /*if (this.pickedObject) {
             if ( !clickedIndices.includes(this.pickedObjectIndex) ) {
                 particles.geometry.attributes.size.array[ this.pickedObjectIndex ] = PARTICLE_SIZE;
@@ -1560,7 +1667,7 @@ class PickHelper {
             // pick the first object. It's the closest one
             this.pickedObject = intersectedObjects[0].object;
             this.pickedObjectIndex = intersectedObjects[0].index;
-            if ( !clickedIndices.includes(this.pickedObjectIndex) ){
+            if ( !clickedIndices.includes(this.pickedObjectIndex) && this.pickedObjectIndex != 0 ){
                 particles.geometry.attributes.size.array[ this.pickedObjectIndex ] = BIGPARTICLE_SIZE;
                 particles.geometry.attributes.size.needsUpdate = true;
                 // update opacity

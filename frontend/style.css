@@ -10,7 +10,7 @@ body {
 #timeline{
     position:fixed;
     left: 0px; top: 120px;
-    float:left; display:inline; width: 50px;
+    float:left; display:inline; width: 100px;
     padding: 10px;
     z-index: 100;
 }
