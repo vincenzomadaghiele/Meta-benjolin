@@ -59,7 +59,7 @@ function animateTimelineCursor( start_y, stop_y, animation_time ){
     }
     var animationCursorTimeout = setTimeout(function() {
         timeline_vertical_cursor.remove();
-        timeline_vertical_cursor_global.remove();
+        //timeline_vertical_cursor_global.remove();
     }, cursortime );
     verticalAnimationTimeouts.push(animationCursorTimeout);
 }
@@ -766,7 +766,7 @@ document.getElementById("insert-crossfade").addEventListener("mouseover", (event
     if ( !ISPLAYBACKON ){
         highlightNone(); 
         event.target.style["cursor"] = "pointer";
-        textlog.innerHTML="Insert a new crossfade. <br> A <b>crossfade</b> is a smooth transition between two states of the system. <br><br> Place the newly created crossfade between two circles.";
+        textlog.innerHTML="Insert a new <b>crossfade</b>. <br><br> A <b>crossfade</b> is a smooth transition between two states of the system. <br><br> Place the newly created crossfade between two circles.";
     } else {
         textlog.innerHTML="Insert crossfade function is disabled during playback.";
         event.target.style["cursor"] = "default";
@@ -777,7 +777,7 @@ document.getElementById("insert-crossfade").addEventListener("click", (event) =>
         SELECTED_ELEMENT = null;
         highlightNone(); 
         drawCrossfade();
-        textlog.innerHTML="Insert a new crossfade. <br> A <b>crossfade</b> is a smooth transition between two states of the system. <br><br> Place the newly created crossfade between two circles.";
+        textlog.innerHTML="Insert a new <b>crossfade</b>. <br><br> A <b>crossfade</b> is a smooth transition between two states of the system. <br><br> Place the newly created crossfade between two circles.";
     } else {
         textlog.innerHTML="Insert crossfade function is disabled during playback.";
         event.target.style["cursor"] = "default";
@@ -789,7 +789,7 @@ document.getElementById("insert-meander").addEventListener("mouseover", (event) 
     if ( !ISPLAYBACKON ){    
         highlightNone(); 
         event.target.style["cursor"] = "pointer";
-        textlog.innerHTML="Insert a new meander. <br> A <b>meander</b> is a transition between two states of the system going through other states. <br><br> Place the newly created meander between two circles. ";
+        textlog.innerHTML="Insert a new <b>meander</b>. <br><br> A <b>meander</b> is a transition between two states of the system going through other states. <br><br> Place the newly created meander between two circles. ";
     } else {
         textlog.innerHTML="Insert meander function is disabled during playback.";
         event.target.style["cursor"] = "default";
@@ -801,7 +801,7 @@ document.getElementById("insert-meander").addEventListener("click", (event) => {
         SELECTED_ELEMENT = null;
         highlightNone(); 
         drawMeander();
-        textlog.innerHTML="Insert a new meander. <br> A <b>meander</b> is a transition between two states of the system going through other states. <br><br> Place the newly created meander between two circles. ";
+        textlog.innerHTML="Insert a new <b>meander</b>. <br><br> A <b>meander</b> is a transition between two states of the system going through other states. <br><br> Place the newly created meander between two circles. ";
     } else {
         textlog.innerHTML="Insert meander function is disabled during playback.";
         event.target.style["cursor"] = "default";
