@@ -1221,6 +1221,7 @@ document.getElementById("download").addEventListener("click", (event) => {
     }
 }); 
 
+/*
 document.getElementById("remove-all").addEventListener("mouseover", (event) => {
     if ( !ISPLAYBACKON ){
         highlightNone(); 
@@ -1250,6 +1251,7 @@ function removeAll(){
     // remove all raphaels
     // all counts to 0
 }
+*/
 
 
 // SCATTERPLOT HOVER
