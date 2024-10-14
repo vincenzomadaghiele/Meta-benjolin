@@ -102,6 +102,7 @@ function randomSettings(){
 }
 
 
+
 var vol_slider = document.getElementById("volume-slider");
 
 var fRQ01_slider = document.getElementById("01_FRQ-slider");
@@ -157,7 +158,7 @@ fILSWP_slider.oninput = function() {
 
 var randomButton = document.getElementById('random');
 randomButton.onclick = function() {
-    sendMsgToWebPd('n_0_23', '0', [ Number(1) ]); // random
+    randomSettings();
 }
 
 var recordButton = document.getElementById('record');
