@@ -2,7 +2,7 @@
 
 A browser interface to navigate the latent space of the Benjolin in 3D space.
 
-![alt text](https://github.com/vincenzomadaghiele/Latent-benjolin-interface/blob/main/frontend/GUI-example.png)
+![alt text](https://github.com/vincenzomadaghiele/Latent-benjolin-interface/blob/main/frontend/Meta-Benjo.png)
 
 ## Installing Dependencies
 
