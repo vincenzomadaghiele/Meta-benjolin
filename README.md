@@ -2,7 +2,8 @@
 
 The Meta-Benjolin is a screen-based notation system and a meta-instrument, developed as a control structure for the Benjolin, a chaotic synthesizer.
 
-![alt text](https://github.com/vincenzomadaghiele/Latent-benjolin-interface/blob/main/frontend/Meta-Benjo.png)
+[![](https://github.com/vincenzomadaghiele/Latent-benjolin-interface/blob/main/frontend/Meta-Benjo.png)](https://www.youtube.com/watch?v=GnY_RTmCS5k&ab_channel=VincenzoMadaghiele)
+
 
 ## Installing Dependencies
 
