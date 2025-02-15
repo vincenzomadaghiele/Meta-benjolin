@@ -1,6 +1,6 @@
 # Meta-Benjolin
 
-A browser interface to navigate the latent space of the Benjolin in 3D space.
+The Meta-Benjolin is a screen-based notation system and a meta-instrument, developed as a control structure for the Benjolin, a chaotic synthesizer.
 
 ![alt text](https://github.com/vincenzomadaghiele/Latent-benjolin-interface/blob/main/frontend/Meta-Benjo.png)
 
@@ -82,5 +82,3 @@ cd Latent-benjolin-interface
 cd frontend
 npx vite
 ```
-
-### Known bugs
