@@ -54,7 +54,7 @@ npm i osc
 
 ## Running the demo
 
-To run the demo, we need <b>three separate terminals</b>b> to be open at the same time. These terminals will run, in parallel:
+To run the demo, we need <b>three separate terminals</b> to be open at the same time. These terminals will run, in parallel:
 
 ##### 1. A python server, which communicates with PD through OSC protocol:
 
