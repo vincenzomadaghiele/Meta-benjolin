@@ -10,11 +10,11 @@ The Meta-Benjolin is a state- and timbre-based notation system and a meta-instru
 ### Python
 Download the git repository as:
 ```
-git clone https://github.com/vincenzomadaghiele/Latent-benjolin-interface
+git clone https://github.com/vincenzomadaghiele/Meta-benjolin
 ```
 In the terminal, run: 
 ```
-cd Latent-benjolin-interface
+cd Meta-benjolin
 conda env create -f benjo_environment.yml
 conda activate benjo
 ```
