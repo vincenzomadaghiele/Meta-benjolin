@@ -1,19 +1,20 @@
-# Latent benjolin interface
+# Meta-Benjolin
 
-A browser interface to navigate the latent space of a generative sound process in 3D space.
+The Meta-Benjolin is a state- and timbre-based notation system and a meta-instrument, developed as a control structure for the Benjolin, a chaotic synthesizer. 
 
-![alt text](https://github.com/vincenzomadaghiele/Latent-benjolin-interface/blob/main/frontend/GUI-example.png)
+[![](https://github.com/vincenzomadaghiele/Latent-benjolin-interface/blob/main/frontend/Meta-Benjo.png)](https://www.youtube.com/watch?v=GnY_RTmCS5k&ab_channel=VincenzoMadaghiele)
+
 
 ## Installing Dependencies
 
 ### Python
 Download the git repository as:
 ```
-git clone https://github.com/vincenzomadaghiele/Latent-benjolin-interface
+git clone https://github.com/vincenzomadaghiele/Meta-benjolin
 ```
 In the terminal, run: 
 ```
-cd Latent-benjolin-interface
+cd Meta-benjolin
 conda env create -f benjo_environment.yml
 conda activate benjo
 ```
@@ -53,7 +54,7 @@ npm i osc
 
 ## Running the demo
 
-To run the demo, we need <b>three separate terminals</b>b> to be open at the same time. These terminals will run, in parallel:
+To run the demo, we need <b>three separate terminals</b> to be open at the same time. These terminals will run, in parallel:
 
 ##### 1. A python server, which communicates with PD through OSC protocol:
 
@@ -82,5 +83,3 @@ cd Latent-benjolin-interface
 cd frontend
 npx vite
 ```
-
-### Known bugs
