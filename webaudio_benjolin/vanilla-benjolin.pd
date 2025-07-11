@@ -149,7 +149,7 @@
 #X connect 16 0 17 0;
 #X connect 17 0 5 0;
 #X restore 307 168 pd O1;
-#N canvas 787 82 522 188 comparator 1;
+#N canvas 787 82 522 188 comparator 0;
 #X text 267 101 macumbista@gmail.com;
 #X text 267 80 OCT 2016;
 #X text 267 91 DEREK HOLZER;
@@ -229,7 +229,7 @@
 #X obj 356 97 r~ O2pls;
 #X obj 289 276 *~ 0.5;
 #X obj 289 242 +~;
-#N canvas 66 82 1051 764 filter 0;
+#N canvas 66 82 1051 764 filter 1;
 #X obj 154 256 mtof~;
 #X obj 229 101 line~;
 #X msg 229 75 \$1 50;

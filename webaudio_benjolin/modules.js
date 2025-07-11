@@ -71,7 +71,7 @@ class OscProcessor extends AudioWorkletProcessor {
             // sample by sample
             let outValue = inChannelRun[i] * RUN + FRQ;
             // // clip within values
-            outValue = Math.min(Math.max(outValue, -60), 127)
+            outValue = Math.min(Math.max(outValue, -60), 127);
             // mtof
             outChannel[i] = (2 ** ((outValue - 69) / 12)) * 440;
         }
@@ -98,3 +98,31 @@ class Comparator extends AudioWorkletProcessor {
     }
 }
 registerProcessor("comparator", Comparator);
+
+
+// filter-freq.js
+class ComputeFilterFreq extends AudioWorkletProcessor {
+    static get parameterDescriptors() { return [
+        { name: "FIL_FRQ", defaultValue: 50 }, { name: "FIL_RUN", defaultValue: 100 },
+        { name: "FIL_SWP", defaultValue: 100 }
+    ] }
+    process(inputs, outputs, parameters) {
+
+        let inChannelRun = inputs[0][0]; 
+        let tri02 = inputs[0][1]; 
+        let outChannel = outputs[0][0]; 
+        let FIL_FRQ = parameters.FIL_FRQ[0];
+        let FIL_RUN = parameters.FIL_RUN[0] / 127;
+        let FIL_SWP = parameters.FIL_SWP[0] / 127;
+
+        for (let i = 0; i < outChannel.length; i++) {
+            let outValue = FIL_FRQ + (FIL_RUN * inChannelRun[i] * 127) + (FIL_SWP * tri02[i] * 127);
+            // clamp value
+            outValue = Math.min(Math.max(outValue, 0), 127);
+            // mtof
+            outChannel[i] = (2 ** ((outValue - 69) / 12)) * 440;
+        }
+        return true;
+    }
+}
+registerProcessor("filter-freq", ComputeFilterFreq);
