@@ -15,6 +15,7 @@ git clone https://github.com/vincenzomadaghiele/Meta-benjolin
 In the terminal, run: 
 ```
 cd Meta-benjolin
+cd python_server
 conda env create -f benjo_environment.yml
 conda activate benjo
 ```
