@@ -301,7 +301,7 @@ console.log(latentSpace.tree);
 var sendBox = function (send_x, send_y, send_z){
     let point = [send_x, send_y, send_z];
     let params = latentSpace.getParamsGivenLatent(point);
-    console.log("Not sending params to Webaudio Benjolin: ", params)
+    console.log("Returning these params: ", params)
     return params;
     // console.log("Start sending box command");
     /*

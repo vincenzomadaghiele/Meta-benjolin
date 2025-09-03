@@ -22,8 +22,139 @@ buttonOn.addEventListener("click", function (){
     audioContext.resume();
     console.log('starting audio context')
 })
+
+
 import { Benjolin } from "benjolin";
-// load modules and create benjolin
+
+// Correctly declare variables in the global scope.
+let myBenjolin;
+
+// Declare functions in the global scope for accessibility.
+let setBenjolin;
+let changeGain;
+
+// Set the slider's event handler immediately.
+if (volumeControl) {
+    volumeControl.oninput = function (){
+        // Only try to change the gain if myBenjolin has been initialized.
+        if (myBenjolin) {
+            myBenjolin.changeGain(volumeControl.value);
+        } else {
+            console.log("Benjolin is not yet initialized.");
+        }
+    };
+} else {
+    console.error("Volume slider element not found!");
+}
+
+
+async function setupBenjolin() {
+  try {
+    // Wait for the module to load
+    await audioContext.audioWorklet.addModule("benjolin-modules.js");
+    
+    // Once the module is loaded, create the Benjolin instance.
+    // Remember to pass 10 arguments to the constructor.
+    myBenjolin = new Benjolin(0, 0, 0, 0, 0, 0, 0, 0, 0, audioContext);
+    
+    console.log("Benjolin is now initialized and ready to use.");
+
+  } catch (error) {
+    console.error("Failed to load audio worklet module:", error);
+  }
+}
+
+setBenjolin = function (params){
+    if (!myBenjolin) {
+        console.error("myBenjolin is not yet initialized!");
+        return;
+    }
+    myBenjolin.changeGain(volumeControl.value);
+    myBenjolin.change01FRQ(params[0]);
+    myBenjolin.change02FRQ(params[1]);
+    myBenjolin.change01RUN(params[2]);
+    myBenjolin.change02RUN(params[3]);
+    myBenjolin.changeFIL_FRQ(params[4]);
+    myBenjolin.changeFIL_RES(params[5]);
+    myBenjolin.changeFIL_RUN(params[6]);
+    myBenjolin.changeFIL_SWP(params[7]);
+};
+
+changeGain = function (value){
+    if (!myBenjolin) {
+        console.error("myBenjolin is not yet initialized!");
+        return;
+    }
+    myBenjolin.changeGain(value);
+};
+
+// Start the setup process
+setupBenjolin();
+
+/*
+let myBenjolin;
+let setBenjolin;
+let changeGain;
+
+const updateGain = function (){
+    if (myBenjolin) {
+        myBenjolin.changeGain(volumeControl.value);
+    } else {
+        console.log("Benjolin not ready yet. Please wait.");
+    }
+}
+
+// Attach the event handler to the slider immediately.
+volumeControl.oninput = updateGain;
+
+async function setupBenjolin() {
+  try {
+    // Wait for the module to load
+    await audioContext.audioWorklet.addModule("benjolin-modules.js");
+    
+    // Once the module is loaded, create the Benjolin instance
+    myBenjolin = new Benjolin(0, 0, 0, 0, 0, 0, 0, 0, 0, audioContext);
+    
+    // CONTROL BENJOLIN WITH SLIDERS
+    // volumeControl.oninput = function () { myBenjolin.changeGain(volumeControl.value); }
+
+  } catch (error) {
+    console.error("Failed to load audio worklet module:", error);
+  }
+}
+
+
+// These functions are now defined in the global scope, so they can be called from anywhere.
+setBenjolin = function (params){
+    // Always check if myBenjolin is ready before trying to use it.
+    if (!myBenjolin) {
+        console.error("myBenjolin is not yet initialized!");
+        return;
+    }
+    myBenjolin.changeGain(volumeControl.value);
+    myBenjolin.change01FRQ(params[0]);
+    myBenjolin.change02FRQ(params[1]);
+    myBenjolin.change01RUN(params[2]);
+    myBenjolin.change02RUN(params[3]);
+    myBenjolin.changeFIL_FRQ(params[4]);
+    myBenjolin.changeFIL_RES(params[5]);
+    myBenjolin.changeFIL_RUN(params[6]);
+    myBenjolin.changeFIL_SWP(params[7]);
+};
+
+changeGain = function (value){
+    if (!myBenjolin) {
+        console.error("myBenjolin is not yet initialized!");
+        return;
+    }
+    volumeControl.value = value;
+    myBenjolin.changeGain(value);
+};
+
+// Don't forget to call the setup function to start the process!
+setupBenjolin();
+
+
 audioContext.audioWorklet.addModule("benjolin-modules.js").then(() => {
     
     // CREATE BENJOLIN
@@ -45,7 +176,9 @@ audioContext.audioWorklet.addModule("benjolin-modules.js").then(() => {
         myBenjolin.changeFIL_RUN(params[6]);
         myBenjolin.changeFIL_SWP(params[7]);
     }
+    return { myBenjolin, setBenjolin, changeGain };
 })
+*/
 
 
 // DRAW TIMELINE
@@ -803,7 +936,7 @@ function highlightAll (){
 
 const singlePlaybackTimeouts = [];
 function loopCrossfade( box_n ){
-    setBenjolin(sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z));
+    sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z);
     sendCrossfade(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z, 
         compositionArray[box_n+1].x, compositionArray[box_n+1].y, compositionArray[box_n+1].z, 
         compositionArray[box_n].duration / 1000);
@@ -873,7 +1006,7 @@ function playBox( box_n ){
             // loop the box
             loopBox( box_n );
         } else {
-            setBenjolin(sendBox( compositionArray[box_n].x, compositionArray[box_n].y, compositionArray[box_n].z ));
+            sendBox( compositionArray[box_n].x, compositionArray[box_n].y, compositionArray[box_n].z );
             let cursor_x = Number(compositionArray[box_n].x) * scale_x - (scale_x/2),
                 cursor_y = Number(compositionArray[box_n].y) * scale_y - (scale_y/2),
                 cursor_z = Number(compositionArray[box_n].z) * scale_z - (scale_z/2);
@@ -1152,7 +1285,8 @@ var stopPlayback = function(){
         clearTimeout(verticalAnimationTimeouts[i]);
         timeline_vertical_cursor_global.remove();
     }
-    //sendStop();
+    sendStop();
+    changeGain(0);
     SELECTED_ELEMENT = null;
     ISPLAYBACKON = false;
     if ( ISRECORDING ){
@@ -1164,6 +1298,7 @@ var stopPlayback = function(){
     highlightNone();
     enableAllInteractions();
     sendStop();
+    changeGain(0);
 }
 function enableAllInteractions(){
     document.getElementById("insert-crossfade").disabled = false;
@@ -1341,6 +1476,7 @@ var upListener = function(){
                 SELECTED_ELEMENT = null;
                 highlightNone(); 
                 sendStop();
+                changeGain(0);
                 if ( COMPOSITION_BAR_ISFULL ){
                     textlog.innerHTML="The maximum composition time has been reached, it is not possible to add more elements to the composition bar. <br><br> Delete an element to modify the composition. ";
                 } else {
@@ -1795,9 +1931,12 @@ class PickHelper {
                 //material.needsUpdate = true
             }
             //console.log("picked ID: "+intersectedObjects[0].index);
-            sendBox(x[this.pickedObjectIndex], y[this.pickedObjectIndex], z[this.pickedObjectIndex]);
+            let params = sendBox(x[this.pickedObjectIndex], y[this.pickedObjectIndex], z[this.pickedObjectIndex]);
+            setBenjolin(params);
+            console.log("This might be picking: "+this.pickedObjectIndex);
         } else {
             sendStop();
+            changeGain(0);
         }
         CURRENTPICKEDINDEX = this.pickedObjectIndex;
     }
