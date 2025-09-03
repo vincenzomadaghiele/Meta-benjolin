@@ -1,3 +1,6 @@
+import { LatentSpace, sendBox, sendMeander, sendDrawMeander, sendCrossfade, sendStop, sendStartrecording, sendStoprecording } from "osc-communication";
+import {datasetJS, x, y, z, p1, p2, p3, p4, p5, p6, p7, p8} from 'datasetJS'
+
 // GRAPHICS GLOBAL PARAMETERS
 const COMPOSITION_BAR_WIDTH_PX = 150;
 const MARGIN_PX = 20
@@ -7,6 +10,42 @@ const HOVER_OPACITY = 0.6;
 const COMPOSITION_BAR_HEIGHT_PX = 1000;
 const TIME_TO_POINTSIZE = 0.003;
 let raphaels = [];
+
+const buttonOn = document.querySelector('#audioOn');
+const volumeControl = document.querySelector("#volume");
+
+// create audio context
+let audioContext = new AudioContext()
+
+// activate audio context
+buttonOn.addEventListener("click", function (){
+    audioContext.resume();
+    console.log('starting audio context')
+})
+import { Benjolin } from "benjolin";
+// load modules and create benjolin
+audioContext.audioWorklet.addModule("benjolin-modules.js").then(() => {
+    
+    // CREATE BENJOLIN
+    const myBenjolin = new Benjolin(0, 0, 0, 0, 0, 0, 0, 0, 0, audioContext);
+
+    // CONTROL BENJOLIN WITH SLIDERS
+    volumeControl.oninput = function (){ myBenjolin.changeGain(volumeControl.value); }
+
+    // functions to update sliders and parameter values
+    function changeGain(value){ volumeControl.value = value; myBenjolin.changeGain(value); }
+
+    function setBenjolin(params){
+        myBenjolin.change01FRQ(params[0]);
+        myBenjolin.change02FRQ(params[1]);
+        myBenjolin.change01RUN(params[2]);
+        myBenjolin.change02RUN(params[3]);
+        myBenjolin.changeFIL_FRQ(params[4]);
+        myBenjolin.changeFIL_RES(params[5]);
+        myBenjolin.changeFIL_RUN(params[6]);
+        myBenjolin.changeFIL_SWP(params[7]);
+    }
+})
 
 
 // DRAW TIMELINE
@@ -764,7 +803,7 @@ function highlightAll (){
 
 const singlePlaybackTimeouts = [];
 function loopCrossfade( box_n ){
-    sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z);
+    setBenjolin(sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z));
     sendCrossfade(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z, 
         compositionArray[box_n+1].x, compositionArray[box_n+1].y, compositionArray[box_n+1].z, 
         compositionArray[box_n].duration / 1000);
@@ -834,7 +873,7 @@ function playBox( box_n ){
             // loop the box
             loopBox( box_n );
         } else {
-            sendBox( compositionArray[box_n].x, compositionArray[box_n].y, compositionArray[box_n].z );
+            setBenjolin(sendBox( compositionArray[box_n].x, compositionArray[box_n].y, compositionArray[box_n].z ));
             let cursor_x = Number(compositionArray[box_n].x) * scale_x - (scale_x/2),
                 cursor_y = Number(compositionArray[box_n].y) * scale_y - (scale_y/2),
                 cursor_z = Number(compositionArray[box_n].z) * scale_z - (scale_z/2);
@@ -1548,6 +1587,7 @@ import * as THREE from 'three';
 import Stats from 'three/addons/libs/stats.module.js';
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@5/+esm";
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+// import { data } from 'jquery';
 
 // VISUALIZATION PROPERTIES
 const scale_x = 100;
@@ -1557,10 +1597,8 @@ const CAMERA_POSITION = 1500;
 
 const BASE_OPACITY = 0.7;
 
-// DATA
-const x = new Float32Array(dataset3D['x']); //.slice(0, 100);
-const y = new Float32Array(dataset3D['y']); //.slice(0, 100);
-const z = new Float32Array(dataset3D['z']); //.slice(0, 100);
+
+
 const N_POINTS = x.length;
 let particles;
 
@@ -1657,7 +1695,6 @@ function init() {
     // STATS
     stats = new Stats();
     //document.getElementById( 'scatterPlot' ).appendChild( stats.dom );
-
 }
 
 // UPDATE POINTER POSITION
@@ -1679,6 +1716,7 @@ function animate() {
 // RENDER FUNCTION FOR ANIMATION
 function render() {
     const time = Date.now() * 0.5;
+    // console.log("rendering");
 
     if ( SELECTED_ELEMENT == null ){
 	    pickHelper.pick(pickPosition, scene, camera, time);
@@ -1993,6 +2031,7 @@ function renderPath(){
 let MEANDERS_LIST = [];
 let numMeanders = 0;
 let newMeanderIndices = undefined;
+/*
 port.on("message", function (oscMessage) {
     $("#message").text(JSON.stringify(oscMessage, undefined, 2));
     newMeanderIndices = oscMessage.args[0].split(" ");
@@ -2040,6 +2079,7 @@ port.on("message", function (oscMessage) {
         numMeanders += 1;
     }
 });
+*/
 
 
 function createCursor( cursor_x, cursor_y, cursor_z ){

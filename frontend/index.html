@@ -4,11 +4,31 @@
         <title>Latent Benjolin</title>
         <meta charset="UTF-8" />
         <link rel="stylesheet" type="text/css" media="all" href="style.css">
-		<script src="node_modules/jquery/dist/jquery.js"></script>
-        <script src="node_modules/osc/dist/osc-browser.min.js"></script>
-		<script src="osc-communication.js"></script>
-		<!--<script src="datastructures.js"></script>-->
-        <script src="/dataset3D.js"></script>
+		<!--<script src="node_modules/jquery/dist/jquery.js"></script>-->
+        <script type="importmap">
+            {
+                "imports": {
+                    "three": "./node_modules/three/build/three.module.js",
+                    "three/addons/": "./node_modules/three/examples/jsm/",
+                    "kdtree": "./k-d-tree.js",
+                    "osc": "./node_modules/osc/dist/osc-browser.min.js",
+                    "datasetJS": "./datasetJS.js",
+                    "benjolin": "./benjolin.js",
+                    "osc-communication": "./osc-communication.js",
+                    "scatterplot": "./scatterplot.js"
+                }
+            }
+        </script>
+        <!--<script src="node_modules/osc/dist/osc-browser.min.js"></script>
+        <script type="module" src="/node_modules/static-kdtree/kdtree.js"></script>
+		<script type="module" src="datasetJS.js"></script>
+        <script type="module" src="latentJS.js"></script>
+        <script type="module" src="osc-communication.js"></script>-->
+        
+        <!--<script src="three.js"></script>-->
+        
+		<script src="datastructures.js"></script>
+
 
     </head>
 
@@ -49,6 +69,14 @@
             }
         </script>
 
+        <div id="audioOn-bar">
+            <button id="audioOn">
+            <div class="text-right">
+                Audio On
+            </div>
+            </button>
+        <p>volume <input type="range" id="volume" min="0" max="1" value="0.5" step="0.01" /></p>
+        </div>
 
         <div id="scatterPlot"></div>
 
@@ -98,8 +126,7 @@
                     <img  src="imgs/x.png" height="35px">
                 </div>
                 </button>-->
-            </div>
-
+            </div>  
 
         <div id="timeline"></div>
         <div id="composition-bar">
@@ -115,9 +142,8 @@
             <p id="textlog" style="padding:10px;"></p>
         </div>
 
-
+    <script type="module" src="scatterplot.js"></script>
     <script src="http://cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"> </script> 
     <script type="module" src="main.js"></script>
-    <!--<script type="module" src="/scatterplot.js"></script>-->
     </body>
 </html>

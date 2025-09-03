@@ -1,7 +1,9 @@
 
-// import { KDTree } from 'kd-tree-javascript'; // Uncomment if using module imports
+import { createKDTree } from 'static-kdtree'; // Uncomment if using module imports
+// var createKDTree = require("static-kdtree")
 
-class LatentSpace {
+
+export class LatentSpace {
     /**
      * Initializes the LatentSpace with dataset and configuration.
      * @param {Object} dataset - An object containing 'reduced_latent_matrix' and 'parameter_matrix'.
@@ -11,26 +13,50 @@ class LatentSpace {
      */
     constructor(dataset, dimensionality = 3, k = 150) {
         this.dimensionality = dimensionality;
-        // Ensure data is in the correct format (arrays of arrays)
-        this.latent = dataset.reduced_latent_matrix.map(row => row.slice(0, dimensionality));
-        this.parameter = dataset.parameter_matrix;
-
-        // Define a distance function for the KD-tree
-        // This function calculates Euclidean distance between two points
-        const distance = (a, b) => {
-            let sum = 0;
-            for (let i = 0; i < this.dimensionality; i++) {
-                sum += (a[i] - b[i]) ** 2;
-            }
-            return Math.sqrt(sum);
-        };
-
-        // Create the KD-tree
-        // The KDTree constructor takes an array of points and the distance function
-        this.kd_tree = new KDTree(this.latent, distance, Array.from({ length: dimensionality }, (_, i) => i));
-
         this.neighbors = k;
         this.path_cache = {}; // Cache for meander paths
+        this.dataset = dataset;
+    }
+
+    getCoordinate(index) {
+        if (index < 0 || index >= this.dataset.reduced_latent_matrix.length) {
+            console.error(`Index out of bounds: ${index}`);
+            return null;
+        }
+        return [this.dataset.x[index], this.dataset.y[index], this.dataset.z[index]];
+    }
+
+    getParameters(index) {
+        if (index < 0 || index >= this.dataset.parameter_matrix.length) {
+            console.error(`Index out of bounds: ${index}`);
+            return null;
+        }
+        return [
+            this.dataset.p1[index],
+            this.dataset.p2[index],
+            this.dataset.p3[index],
+            this.dataset.p4[index],
+            this.dataset.p5[index],
+            this.dataset.p6[index],
+            this.dataset.p7[index],
+            this.dataset.p8[index]
+        ];
+    }
+
+    calculateDistance(indexA, indexB) {
+        let a = getCoordinate(indexA);
+        let b = getCoordinate(indexB);
+        let sum = 0;
+        for (let i = 0; i < this.dimensionality; i++) {
+            sum += (a[i] - b[i]) ** 2;
+        }
+        return Math.sqrt(sum);
+    }
+
+    makeKDTree() {
+        this.kdt = createKDTree([this.dataset.x, this.dataset.y, this.dataset.z]);
+        console.log("KD-Tree created. Dimensionality and length:");
+        console.log(this.kdt.dimension, this.kdt.length);
     }
 
     /**
@@ -44,8 +70,8 @@ class LatentSpace {
             return { latent: null, parameters: null };
         }
         return {
-            latent: this.latent[index],
-            parameters: this.parameter[index]
+            latent: this.getCoordinate(index),
+            parameters: this.getParameters(index)
         };
     }
 
@@ -266,50 +292,3 @@ class LatentSpace {
         return interpolatedParams;
     }
 }
-
-// Example Usage (assuming your dataset is loaded as 'yourDataset' JSON object)
-/*
-// Example dataset structure (replace with your actual loaded data)
-const yourDataset = {
-    reduced_latent_matrix: [
-        [0.1, 0.2, 0.3],
-        [0.4, 0.5, 0.6],
-        [0.7, 0.8, 0.9],
-        // ... around 85000 entries
-    ],
-    parameter_matrix: [
-        [10, 20, 30, 40, 50, 60, 70, 80],
-        [11, 21, 31, 41, 51, 61, 71, 81],
-        [12, 22, 32, 42, 52, 62, 72, 82],
-        // ... around 85000 entries
-    ]
-};
-
-// Initialize LatentSpace
-const latentSpace = new LatentSpace(yourDataset, 3, 150);
-
-// Example: Get info for a specific point (e.g., index 5)
-const pointInfo = latentSpace.getPointInfo(5);
-console.log("Point 5 Latent:", pointInfo.latent);
-console.log("Point 5 Parameters:", pointInfo.parameters);
-
-// Example: Find the index for a given latent coordinate
-const targetLatent = [0.41, 0.52, 0.63];
-const nearestIndex = latentSpace.getIndexGivenLatent(targetLatent);
-console.log(`Nearest index to ${targetLatent} is: ${nearestIndex}`);
-
-// Example: Calculate a meander path between two points
-const startLatent = [0.1, 0.2, 0.3]; // Corresponds to index 0 in example dataset
-const endLatent = [0.7, 0.8, 0.9];   // Corresponds to index 2 in example dataset
-
-try {
-    const path = latentSpace.getMeander(startLatent, endLatent);
-    console.log("Meander Path Indices:", path);
-    const pathLatentCoords = latentSpace.getLatentCoordinatesForPath(path);
-    console.log("Meander Path Latent Coordinates:", pathLatentCoords);
-    const pathParameters = latentSpace.getParametersForPath(path);
-    console.log("Meander Path Parameters:", pathParameters);
-} catch (error) {
-    console.error("Error calculating meander path:", error);
-}
-*/

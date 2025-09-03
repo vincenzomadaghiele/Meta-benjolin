@@ -16,7 +16,7 @@ body {
 }
 #commands-bar{
     position:fixed;
-    left: 0px; top: 0px;
+    left: 000px; top: 0px;
     padding: 30px;
     z-index: 100;
 }
@@ -33,6 +33,21 @@ body {
     left: 400px; top: 0px;
     padding: 30px;
     z-index: 100;
+}
+
+#audioOn-bar{
+    position:fixed;
+    right: 10px; top: 10px;
+    padding: 10px;
+    z-index: 100;
+    color: white;
+    border: 1px solid white;
+    height: auto;
+    width: auto;
+    font-size: 15px;
+    background-color: rgba(0, 0, 0, 0.2);
+    outline-style: solid;
+    outline-color: rgb(255, 255, 255);
 }
 
 #text-logs{
@@ -68,3 +83,4 @@ body {
     left: 0;
     opacity: 0.5;
 }
+
