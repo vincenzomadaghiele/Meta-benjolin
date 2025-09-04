@@ -940930,9 +940930,9 @@ var datasetJS = {
     ]
 }
 
-const x = new Float32Array(datasetJS['x']);
-const y = new Float32Array(datasetJS['y']);
-const z = new Float32Array(datasetJS['z']);
+const x = new Array(datasetJS['x']);
+const y = new Array(datasetJS['y']);
+const z = new Array(datasetJS['z']);
 const p1 = new Float32Array(datasetJS['p1']);
 const p2 = new Float32Array(datasetJS['p2']);
 const p3 = new Float32Array(datasetJS['p3']);

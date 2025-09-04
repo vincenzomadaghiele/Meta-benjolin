@@ -193,7 +193,7 @@ function KDTreeGenerator() {
       
       // Sort point list and choose median as pivot element
       points.sort(function(a, b) { return a[axis] - b[axis]; });
-      i_median = Math.floor(points.length / 2);
+      let i_median = Math.floor(points.length / 2);
       
       // Create node and construct subtrees
       var point = points[i_median],

@@ -1,5 +1,5 @@
 import { LatentSpace, sendBox, sendMeander, sendDrawMeander, sendCrossfade, sendStop, sendStartrecording, sendStoprecording } from "osc-communication";
-import {datasetJS, x, y, z, p1, p2, p3, p4, p5, p6, p7, p8} from 'datasetJS'
+import {datasetJS, p1, p2, p3, p4, p5, p6, p7, p8} from 'datasetJS'
 
 // GRAPHICS GLOBAL PARAMETERS
 const COMPOSITION_BAR_WIDTH_PX = 150;
@@ -13,6 +13,10 @@ let raphaels = [];
 
 const buttonOn = document.querySelector('#audioOn');
 const volumeControl = document.querySelector("#volume");
+
+const x = datasetJS.x;
+const y = datasetJS.y;
+const z = datasetJS.z;
 
 // create audio context
 let audioContext = new AudioContext()
@@ -69,15 +73,16 @@ setBenjolin = function (params){
         console.error("myBenjolin is not yet initialized!");
         return;
     }
+    let roundedParams = params.map(param => param.toFixed(2));
     myBenjolin.changeGain(volumeControl.value);
-    myBenjolin.change01FRQ(params[0]);
-    myBenjolin.change02FRQ(params[1]);
-    myBenjolin.change01RUN(params[2]);
-    myBenjolin.change02RUN(params[3]);
-    myBenjolin.changeFIL_FRQ(params[4]);
-    myBenjolin.changeFIL_RES(params[5]);
-    myBenjolin.changeFIL_RUN(params[6]);
-    myBenjolin.changeFIL_SWP(params[7]);
+    myBenjolin.change01FRQ(roundedParams[0]);
+    myBenjolin.change02FRQ(roundedParams[1]);
+    myBenjolin.change01RUN(roundedParams[2]);
+    myBenjolin.change02RUN(roundedParams[3]);
+    myBenjolin.changeFIL_FRQ(roundedParams[4]);
+    myBenjolin.changeFIL_RES(roundedParams[5]);
+    myBenjolin.changeFIL_RUN(roundedParams[6]);
+    myBenjolin.changeFIL_SWP(roundedParams[7]);
 };
 
 changeGain = function (value){
@@ -91,94 +96,25 @@ changeGain = function (value){
 // Start the setup process
 setupBenjolin();
 
-/*
-let myBenjolin;
-let setBenjolin;
-let changeGain;
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-const updateGain = function (){
-    if (myBenjolin) {
-        myBenjolin.changeGain(volumeControl.value);
-    } else {
-        console.log("Benjolin not ready yet. Please wait.");
+let stopPlaybackFlag = false;
+
+const playInBackground = async (path, duration) => {
+    let interval = duration / path.length;
+    let i = 0;
+    stopPlaybackFlag = false;
+    for (const params of path) {
+        if (stopPlaybackFlag) {
+            console.log("Playback stopped.");
+            break;
+        }
+        setBenjolin(params);
+        i++;
+        await delay(interval);
     }
-}
-
-// Attach the event handler to the slider immediately.
-volumeControl.oninput = updateGain;
-
-async function setupBenjolin() {
-  try {
-    // Wait for the module to load
-    await audioContext.audioWorklet.addModule("benjolin-modules.js");
-    
-    // Once the module is loaded, create the Benjolin instance
-    myBenjolin = new Benjolin(0, 0, 0, 0, 0, 0, 0, 0, 0, audioContext);
-    
-    // CONTROL BENJOLIN WITH SLIDERS
-    // volumeControl.oninput = function () { myBenjolin.changeGain(volumeControl.value); }
-
-  } catch (error) {
-    console.error("Failed to load audio worklet module:", error);
-  }
-}
-
-
-// These functions are now defined in the global scope, so they can be called from anywhere.
-setBenjolin = function (params){
-    // Always check if myBenjolin is ready before trying to use it.
-    if (!myBenjolin) {
-        console.error("myBenjolin is not yet initialized!");
-        return;
-    }
-    myBenjolin.changeGain(volumeControl.value);
-    myBenjolin.change01FRQ(params[0]);
-    myBenjolin.change02FRQ(params[1]);
-    myBenjolin.change01RUN(params[2]);
-    myBenjolin.change02RUN(params[3]);
-    myBenjolin.changeFIL_FRQ(params[4]);
-    myBenjolin.changeFIL_RES(params[5]);
-    myBenjolin.changeFIL_RUN(params[6]);
-    myBenjolin.changeFIL_SWP(params[7]);
+    console.log("Playback complete.");
 };
-
-changeGain = function (value){
-    if (!myBenjolin) {
-        console.error("myBenjolin is not yet initialized!");
-        return;
-    }
-    volumeControl.value = value;
-    myBenjolin.changeGain(value);
-};
-
-// Don't forget to call the setup function to start the process!
-setupBenjolin();
-
-
-audioContext.audioWorklet.addModule("benjolin-modules.js").then(() => {
-    
-    // CREATE BENJOLIN
-    const myBenjolin = new Benjolin(0, 0, 0, 0, 0, 0, 0, 0, 0, audioContext);
-
-    // CONTROL BENJOLIN WITH SLIDERS
-    volumeControl.oninput = function (){ myBenjolin.changeGain(volumeControl.value); }
-
-    // functions to update sliders and parameter values
-    function changeGain(value){ volumeControl.value = value; myBenjolin.changeGain(value); }
-
-    function setBenjolin(params){
-        myBenjolin.change01FRQ(params[0]);
-        myBenjolin.change02FRQ(params[1]);
-        myBenjolin.change01RUN(params[2]);
-        myBenjolin.change02RUN(params[3]);
-        myBenjolin.changeFIL_FRQ(params[4]);
-        myBenjolin.changeFIL_RES(params[5]);
-        myBenjolin.changeFIL_RUN(params[6]);
-        myBenjolin.changeFIL_SWP(params[7]);
-    }
-    return { myBenjolin, setBenjolin, changeGain };
-})
-*/
 
 
 // DRAW TIMELINE
@@ -936,10 +872,12 @@ function highlightAll (){
 
 const singlePlaybackTimeouts = [];
 function loopCrossfade( box_n ){
-    sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z);
-    sendCrossfade(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z, 
+    let params = sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z);
+    setBenjolin(params);
+    let path = sendCrossfade(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z, 
         compositionArray[box_n+1].x, compositionArray[box_n+1].y, compositionArray[box_n+1].z, 
         compositionArray[box_n].duration / 1000);
+    playInBackground(path, compositionArray[box_n].duration);
     animateCrossfade( compositionArray[box_n-1].x,compositionArray[box_n-1].y,compositionArray[box_n-1].z,   
         compositionArray[box_n+1].x,compositionArray[box_n+1].y,compositionArray[box_n+1].z, 
         compositionArray[box_n].duration );
@@ -953,7 +891,8 @@ function loopCrossfade( box_n ){
 }
 
 function loopMeander( box_n ){
-    sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z);
+    let params = sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z);
+    setBenjolin(params);
     sendMeander(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z, 
         compositionArray[box_n+1].x, compositionArray[box_n+1].y, compositionArray[box_n+1].z, 
         compositionArray[box_n].duration / 1000);
@@ -968,7 +907,8 @@ function loopMeander( box_n ){
 }
 
 function loopBox( box_n ){
-    sendBox( compositionArray[box_n].x, compositionArray[box_n].y, compositionArray[box_n].z );
+    let params = sendBox( compositionArray[box_n].x, compositionArray[box_n].y, compositionArray[box_n].z );
+    setBenjolin(params);
     let cursor_x = Number(compositionArray[box_n].x) * scale_x - (scale_x/2),
         cursor_y = Number(compositionArray[box_n].y) * scale_y - (scale_y/2),
         cursor_z = Number(compositionArray[box_n].z) * scale_z - (scale_z/2);
@@ -1006,7 +946,8 @@ function playBox( box_n ){
             // loop the box
             loopBox( box_n );
         } else {
-            sendBox( compositionArray[box_n].x, compositionArray[box_n].y, compositionArray[box_n].z );
+            let params = sendBox( compositionArray[box_n].x, compositionArray[box_n].y, compositionArray[box_n].z );
+            setBenjolin(params);
             let cursor_x = Number(compositionArray[box_n].x) * scale_x - (scale_x/2),
                 cursor_y = Number(compositionArray[box_n].y) * scale_y - (scale_y/2),
                 cursor_z = Number(compositionArray[box_n].z) * scale_z - (scale_z/2);
@@ -1024,10 +965,12 @@ function playBox( box_n ){
 
             } else {
                 // play crossfade only once
-                sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z);
-                sendCrossfade(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z, 
+                let params = sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z);
+                setBenjolin(params);
+                let path = sendCrossfade(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z, 
                     compositionArray[box_n+1].x, compositionArray[box_n+1].y, compositionArray[box_n+1].z, 
-                    compositionArray[box_n].duration / 1000);    
+                    compositionArray[box_n].duration / 1000);
+                playInBackground(path, compositionArray[box_n].duration);
                 animateCrossfade( compositionArray[box_n-1].x,compositionArray[box_n-1].y,compositionArray[box_n-1].z,   
                                 compositionArray[box_n+1].x,compositionArray[box_n+1].y,compositionArray[box_n+1].z, 
                                 compositionArray[box_n].duration );
@@ -1049,10 +992,12 @@ function playBox( box_n ){
                 
             } else {
                 // play meander only once
-                sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z);
-                sendMeander(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z, 
+                let params = sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z);
+                setBenjolin(params);
+                let path = sendMeander(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z, 
                     compositionArray[box_n+1].x, compositionArray[box_n+1].y, compositionArray[box_n+1].z, 
                     compositionArray[box_n].duration / 1000);
+                playInBackground(path, compositionArray[box_n].duration);
                 animateMeander( compositionArray[box_n].meanderComponents, compositionArray[box_n].duration );
                 animateBoxVerticalCursor( box_n );
             }    
@@ -1285,8 +1230,9 @@ var stopPlayback = function(){
         clearTimeout(verticalAnimationTimeouts[i]);
         timeline_vertical_cursor_global.remove();
     }
-    sendStop();
+    // sendStop();
     changeGain(0);
+    stopPlaybackFlag = true;
     SELECTED_ELEMENT = null;
     ISPLAYBACKON = false;
     if ( ISRECORDING ){
@@ -1297,7 +1243,7 @@ var stopPlayback = function(){
     }
     highlightNone();
     enableAllInteractions();
-    sendStop();
+    // sendStop();
     changeGain(0);
 }
 function enableAllInteractions(){
@@ -1475,7 +1421,7 @@ var upListener = function(){
                 // disable listening to previous point
                 SELECTED_ELEMENT = null;
                 highlightNone(); 
-                sendStop();
+                // sendStop();
                 changeGain(0);
                 if ( COMPOSITION_BAR_ISFULL ){
                     textlog.innerHTML="The maximum composition time has been reached, it is not possible to add more elements to the composition bar. <br><br> Delete an element to modify the composition. ";
@@ -1792,6 +1738,7 @@ function init() {
         let this_y = y[i] * scale_y - (scale_y/2);
         let this_z = z[i] * scale_z - (scale_z/2);
 		vertices.push( this_x, this_y, this_z);
+
         color.setRGB( 255, 0, 0 );
         colors.push( color.r, color.g, color.b );
         sizes[i] = PARTICLE_SIZE;
@@ -1852,7 +1799,6 @@ function animate() {
 // RENDER FUNCTION FOR ANIMATION
 function render() {
     const time = Date.now() * 0.5;
-    // console.log("rendering");
 
     if ( SELECTED_ELEMENT == null ){
 	    pickHelper.pick(pickPosition, scene, camera, time);
@@ -1933,9 +1879,8 @@ class PickHelper {
             //console.log("picked ID: "+intersectedObjects[0].index);
             let params = sendBox(x[this.pickedObjectIndex], y[this.pickedObjectIndex], z[this.pickedObjectIndex]);
             setBenjolin(params);
-            console.log("This might be picking: "+this.pickedObjectIndex);
         } else {
-            sendStop();
+            // sendStop();
             changeGain(0);
         }
         CURRENTPICKEDINDEX = this.pickedObjectIndex;
