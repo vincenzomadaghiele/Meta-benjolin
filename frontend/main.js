@@ -1,5 +1,10 @@
 import { LatentSpace, sendBox, sendMeander, sendDrawMeander, sendCrossfade, sendStop, sendStartrecording, sendStoprecording } from "osc-communication";
 import {datasetJS, p1, p2, p3, p4, p5, p6, p7, p8} from 'datasetJS'
+import * as THREE from 'three';
+import Stats from 'three/addons/libs/stats.module.js';
+import * as d3 from "https://cdn.jsdelivr.net/npm/d3@5/+esm";
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { Benjolin } from "benjolin";
 
 // GRAPHICS GLOBAL PARAMETERS
 const COMPOSITION_BAR_WIDTH_PX = 150;
@@ -13,6 +18,8 @@ let raphaels = [];
 
 const buttonOn = document.querySelector('#audioOn');
 const volumeControl = document.querySelector("#volume");
+const mainContent = document.querySelector("#main-app");
+const introScreen = document.querySelector("#intro-screen");
 
 const x = datasetJS.x;
 const y = datasetJS.y;
@@ -25,10 +32,11 @@ let audioContext = new AudioContext()
 buttonOn.addEventListener("click", function (){
     audioContext.resume();
     console.log('starting audio context')
+    mainContent.style.opacity = 1.0;
+    introScreen.style.opacity = 0.0;
 })
 
 
-import { Benjolin } from "benjolin";
 
 // Correctly declare variables in the global scope.
 let myBenjolin;
@@ -893,9 +901,10 @@ function loopCrossfade( box_n ){
 function loopMeander( box_n ){
     let params = sendBox(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z);
     setBenjolin(params);
-    sendMeander(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z, 
+    let path = sendMeander(compositionArray[box_n-1].x, compositionArray[box_n-1].y, compositionArray[box_n-1].z, 
         compositionArray[box_n+1].x, compositionArray[box_n+1].y, compositionArray[box_n+1].z, 
         compositionArray[box_n].duration / 1000);
+    playInBackground(path, compositionArray[box_n].duration);
     animateMeander( compositionArray[box_n].meanderComponents, compositionArray[box_n].duration );
     animateBoxVerticalCursor( box_n );
     var selectedBoxTimeout = setTimeout(function() {
@@ -1051,6 +1060,7 @@ document.getElementById("insert-meander").addEventListener("click", (event) => {
         SELECTED_ELEMENT = null;
         highlightNone(); 
         drawMeander();
+        // recieveMeander();
         textlog.innerHTML="Insert a new <b>meander</b>. <br><br> A <b>meander</b> is a transition between two states of the system going through other states. <br><br> Place the newly created meander between two circles. ";
     } else {
         textlog.innerHTML="Insert meander function is disabled during playback.";
@@ -1665,10 +1675,7 @@ function exchangeElements(element1, element2){
 
 
 
-import * as THREE from 'three';
-import Stats from 'three/addons/libs/stats.module.js';
-import * as d3 from "https://cdn.jsdelivr.net/npm/d3@5/+esm";
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
 // import { data } from 'jquery';
 
 // VISUALIZATION PROPERTIES
@@ -2079,7 +2086,8 @@ function renderPath(){
                         y2 = compositionArray[i+1].y, //* scale_y - (scale_y/2),
                         z2 = compositionArray[i+1].z; // * scale_z - (scale_z/2);
 
-                    sendDrawMeander(x1, y1, z1, x2, y2, z2);
+                    let path_coordinates = sendDrawMeander(x1, y1, z1, x2, y2, z2);
+                    storeMeander(path_coordinates);
                     
                 }
             } 
@@ -2115,27 +2123,21 @@ function renderPath(){
 let MEANDERS_LIST = [];
 let numMeanders = 0;
 let newMeanderIndices = undefined;
-/*
-port.on("message", function (oscMessage) {
-    $("#message").text(JSON.stringify(oscMessage, undefined, 2));
-    newMeanderIndices = oscMessage.args[0].split(" ");
-    var newMeanderIndices_filtered = newMeanderIndices.filter(function (el) {
-        return el != "";
-      });
-    //console.log(newMeanderIndices_filtered);
 
-    if ( newMeanderIndices_filtered ){
-        for ( let i = 3; i < newMeanderIndices_filtered.length; i+=3 ) {
+function storeMeander(pathCoords) {
+    // console.log(pathCoords);
+    if ( pathCoords ){
+        for ( let i = 0; i < pathCoords.length-1; i++) {
             
-            //let preavious_meanderidx = Number(newMeanderIndices_filtered[i-1]);
-            //let meanderidx = Number(newMeanderIndices_filtered[i]);
+            //let preavious_meanderidx = Number(pathCoords[i-1]);
+            //let meanderidx = Number(pathCoords[i]);
             let linepoints = [];
-            let x1 = Number(newMeanderIndices_filtered[i-3]) * scale_x - (scale_x/2),
-                y1 = Number(newMeanderIndices_filtered[i-2]) * scale_y - (scale_y/2),
-                z1 = Number(newMeanderIndices_filtered[i-1]) * scale_z - (scale_z/2);
-            let x2 = Number(newMeanderIndices_filtered[i]) * scale_x - (scale_x/2),
-                y2 = Number(newMeanderIndices_filtered[i+1]) * scale_y - (scale_y/2),
-                z2 = Number(newMeanderIndices_filtered[i+2]) * scale_z - (scale_z/2);
+            let x1 = Number(pathCoords[i][0]) * scale_x - (scale_x/2),
+                y1 = Number(pathCoords[i][1]) * scale_y - (scale_y/2),
+                z1 = Number(pathCoords[i][2]) * scale_z - (scale_z/2);
+            let x2 = Number(pathCoords[i+1][0]) * scale_x - (scale_x/2),
+                y2 = Number(pathCoords[i+1][1]) * scale_y - (scale_y/2),
+                z2 = Number(pathCoords[i+1][2]) * scale_z - (scale_z/2);
             linepoints.push( new THREE.Vector3( x1,y1,z1 )); 
             linepoints.push( new THREE.Vector3( x2,y2,z2 )); 
 
@@ -2149,7 +2151,7 @@ port.on("message", function (oscMessage) {
             scene.add( line );
         
         }
-        MEANDERS_LIST.push(newMeanderIndices_filtered);
+        MEANDERS_LIST.push(pathCoords);
         let internalMeanderCount = 0;
         //console.log(compositionArray)
         for ( let i = 0; i < compositionArray.length; i++ ) {
@@ -2162,8 +2164,8 @@ port.on("message", function (oscMessage) {
         }
         numMeanders += 1;
     }
-});
-*/
+};
+
 
 
 function createCursor( cursor_x, cursor_y, cursor_z ){
@@ -2201,7 +2203,7 @@ function animateMeander( meander, time ){
         let cursor_x = Number(meander[0]), //* scale_x - (scale_x/2),
             cursor_y = Number(meander[1]), //* scale_y - (scale_y/2),
             cursor_z = Number(meander[2]); //* scale_z - (scale_z/2);
-        cursor = createCursor( cursor_x, cursor_y, cursor_z );
+        cursor = createCursor(cursor_x, cursor_y, cursor_z);
         scene.add(cursor);
 
         for ( let i = 0; i < meander.length; i+=3 ) {
@@ -2276,6 +2278,7 @@ let cursor_target_x = 20, cursor_target_y = 20, cursor_target_z = 20;
 //scene.remove(cursor);
 
 
+
 // TEXTLOG
 
 var open_textlog = document.getElementById("open-textlog");
@@ -2304,7 +2307,6 @@ close_textlog.onclick = function(){
     textlog_div.style["height"] = "20px";
     textlog_div.style["width"] = "20px";
 }; 
-
 
 
 

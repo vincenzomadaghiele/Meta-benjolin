@@ -19,21 +19,19 @@
                 }
             }
         </script>
-        <!--<script src="node_modules/osc/dist/osc-browser.min.js"></script>
-        <script type="module" src="/node_modules/static-kdtree/kdtree.js"></script>
-		<script type="module" src="datasetJS.js"></script>
-        <script type="module" src="latentJS.js"></script>
-        <script type="module" src="osc-communication.js"></script>-->
-        
-        <!--<script src="three.js"></script>-->
         
 		<script src="datastructures.js"></script>
-
-
     </head>
-
     <body>
+        <div id="intro-screen">
+            <div class="audioOn-box">
+                <button id="audioOn">
+                    CLICK HERE TO START
+                </button>
+            </div>
+        </div>
 
+        
         <script type="x-shader/x-vertex" id="vertexshader">
             attribute float size;
             attribute float opacity;
@@ -68,80 +66,76 @@
 
             }
         </script>
+        
 
-        <div id="audioOn-bar">
-            <button id="audioOn">
-            <div class="text-right">
-                Audio On
+        <div id="main-app">
+            <div id="credits">
+                <p id="title">Meta-Benjolin</p>
+                <p id="subtitle">Developed by Vincenzo Madaghiele and Leonard Lund</p>
             </div>
-            </button>
-        <p>volume <input type="range" id="volume" min="0" max="1" value="0.5" step="0.01" /></p>
-        </div>
+            <div id="volume-slider">
+                Volume:
+                <p><input type="range" id="volume" class="slider" min="0" max="1" value="0.5" step="0.01" /></p>
+            </div>
+            <div id="scatterPlot"></div>
 
-        <div id="scatterPlot"></div>
-
-        <div id="commands-bar">
-            <button id="insert-crossfade">
-            <div class="text-center">
-                <img  src="imgs/arrow.png" height="35px">
-            </div>
-            </button>
-            <button id="insert-meander">
-            <div class="text-center">
-                <img  src="imgs/zigzag.png" height="35px">
-            </div>
-            </button>
-            <button id="bin">
-            <div class="text-center">
-                <img  src="imgs/bin.png" height="35px">
-            </div>
-            </button>
-        </div>
-        <div id="commands-bar-2">
-            <button id="play">
-            <div class="text-center">
-                <img  src="imgs/play.png" height="35px">
-            </div>
-            </button>
-            <button id="record">
+            <div id="commands-bar">
+                <button id="insert-crossfade">
                 <div class="text-center">
-                    <img  src="imgs/record.png" height="35px">
+                    <img  src="imgs/arrow.png" height="35px">
                 </div>
-            </button>
-            <button id="stop">
-            <div class="text-center">
-                <img  src="imgs/stop.png" height="35px">
-            </div>
-            </button>
-        </div>
-
-        <div id="commands-bar-3">
-            <button id="download">
-            <div class="text-center">
-                <img  src="imgs/download.png" height="35px">
-            </div>
-            </button>
-            <!--<button id="remove-all">
+                </button>
+                <button id="insert-meander">
                 <div class="text-center">
-                    <img  src="imgs/x.png" height="35px">
+                    <img  src="imgs/zigzag.png" height="35px">
                 </div>
-                </button>-->
-            </div>  
-
-        <div id="timeline"></div>
-        <div id="composition-bar">
-        </div>
-
-        <div id="text-logs">
-            <div id="open-textlog" class="text-center" >
-                <img src="imgs/plus-white.png" height="20px">
+                </button>
+                <button id="bin">
+                <div class="text-center">
+                    <img  src="imgs/bin.png" height="35px">
+                </div>
+                </button>
             </div>
-            <div id="close-textlog" class="text-center">
-                <img style="border: 1px solid white;" src="imgs/minus-white.png" height="20px">
+            <div id="commands-bar-2">
+                <button id="play">
+                <div class="text-center">
+                    <img  src="imgs/play.png" height="35px">
+                </div>
+                </button>
+                <button id="record">
+                    <div class="text-center">
+                        <img  src="imgs/record.png" height="35px">
+                    </div>
+                </button>
+                <button id="stop">
+                <div class="text-center">
+                    <img  src="imgs/stop.png" height="35px">
+                </div>
+                </button>
             </div>
-            <p id="textlog" style="padding:10px;"></p>
-        </div>
 
+            <div id="commands-bar-3">
+                <button id="download">
+                <div class="text-center">
+                    <img  src="imgs/download.png" height="35px">
+                </div>
+                </button>
+                </div>  
+
+            <div id="timeline"></div>
+            <div id="composition-bar">
+            </div>
+
+            <div id="text-logs">
+                <div id="open-textlog" class="text-center" >
+                    <img src="imgs/plus-white.png" height="20px">
+                </div>
+                <div id="close-textlog" class="text-center">
+                    <img style="border: 1px solid white;" src="imgs/minus-white.png" height="20px">
+                </div>
+                <p id="textlog" style="padding:10px;"></p>
+            </div>
+        </div>
     <script type="module" src="scatterplot.js"></script>
     <script src="http://cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"> </script> 
     <script type="module" src="main.js"></script>

@@ -17,7 +17,6 @@ class LatentSpace {
         this.neighbors = k;
         this.path_cache = {}; // Cache for meander paths
         this.dataset = dataset;
-        this.xyz = [this.dataset.x, this.dataset.y, this.dataset.z];
         this.lookUp = {}; // For quick index lookup
     }
 
@@ -31,7 +30,8 @@ class LatentSpace {
     }
 
     getCoordinate(index) {
-        return [this.dataset.x[index], this.dataset.y[index], this.dataset.z[index]];
+        let coords = [this.dataset.x[index], this.dataset.y[index], this.dataset.z[index]];
+        return coords;
     }
 
     getParameters(index) {
@@ -168,7 +168,7 @@ class LatentSpace {
             }
 
             // The cost function combines parameter space distance and latent space distance
-            const cost = param_distance_to_a * (1 / 100) + latent_distance_to_b;
+            const cost = param_distance_to_a * (1 / 400) + latent_distance_to_b;
             // const cost = latent_distance_to_b;
             // const cost = param_distance_to_a;
 
@@ -249,7 +249,7 @@ class LatentSpace {
      * @returns {number[][]} An array of latent coordinates, where each coordinate is an array [x, y, z].
      */
     getLatentCoordinatesForPath(pathOfIndices) {
-        return pathOfIndices.map(index => this.latent[index]);
+        return pathOfIndices.map(index => this.getCoordinate(index));
     }
 
     /**
@@ -326,8 +326,13 @@ var sendMeander = function (send_start_x, send_start_y, send_start_z, send_end_x
 }
 
 var sendDrawMeander = function (send_start_x, send_start_y, send_start_z, send_end_x, send_end_y, send_end_z){
-    console.log("sending draw meander command. NB: needs to be filled in.");
-    // return pathParams;
+    let point1 = [send_start_x, send_start_y, send_start_z];
+    let point2 = [send_end_x, send_end_y, send_end_z];
+    let pathIndices = latentSpace.getMeander(point1, point2);
+    console.log(pathIndices);
+    let pathCoords = latentSpace.getLatentCoordinatesForPath(pathIndices);
+    console.log(pathCoords);
+    return pathCoords;
 }
 
 var sendCrossfade = function (send_start_x, send_start_y, send_start_z, send_end_x, send_end_y, send_end_z, meander_time){
