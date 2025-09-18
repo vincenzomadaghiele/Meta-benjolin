@@ -76,7 +76,7 @@ body {
     color:rgb(0, 255, 0);
     position:fixed;
     font-size: 15px;
-    right: 200px; top: 27px;
+    right: 200px; top: 99px;
     margin-left: 10px;
     margin-right: 10px;
     vertical-align: middle;
@@ -87,7 +87,8 @@ body {
 
 #credits{
     position:fixed;
-    right: 10px; bottom: 10px;
+    text-align: right;
+    right: 15px; top: 10px;
     padding: 5px;
     z-index: 100;
     color: rgb(0, 255, 0);
@@ -103,7 +104,7 @@ body {
     position:fixed;
     background:rgb(0, 255, 0);
     accent-color: rgb(0, 255, 0);
-    right: 10px; top: 20px;
+    right: 10px; top: 90px;
     padding: 5px;
     z-index: 100;
     color: rgb(50, 214, 0); 

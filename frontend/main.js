@@ -2197,22 +2197,24 @@ function setCursorPosition( cursor_x, cursor_y, cursor_z ){
 let meanderPlaybackTimeouts = []
 function animateMeander( meander, time ){
     if ( meander ){
+        console.log('MEANDER', meander[0][0],meander[1][0],meander[2][0] )
         // the interval at which the meander changes position
         let meandercursortime = 0
-        let time_interval = time / (meander.length/3);
-        let cursor_x = Number(meander[0]), //* scale_x - (scale_x/2),
-            cursor_y = Number(meander[1]), //* scale_y - (scale_y/2),
-            cursor_z = Number(meander[2]); //* scale_z - (scale_z/2);
+        let time_interval = time / meander.length;
+        let cursor_x = Number(meander[0][0]), //* scale_x - (scale_x/2),
+            cursor_y = Number(meander[0][1]), //* scale_y - (scale_y/2),
+            cursor_z = Number(meander[0][2]); //* scale_z - (scale_z/2);
         cursor = createCursor(cursor_x, cursor_y, cursor_z);
         scene.add(cursor);
+        console.log('MEANDER', cursor_x,cursor_y,cursor_z )
 
-        for ( let i = 0; i < meander.length; i+=3 ) {
+        for ( let i = 0; i < meander.length; i+=1 ) {
             var meanderCursorTimeout = setTimeout(function() {
-                cursor_x = Number(meander[i]) * scale_x - (scale_x/2);
-                cursor_y = Number(meander[i+1]) * scale_y - (scale_y/2);
-                cursor_z = Number(meander[i+2]) * scale_z - (scale_z/2);
+                cursor_x = Number(meander[i][0]) * scale_x - (scale_x/2);
+                cursor_y = Number(meander[i][1]) * scale_y - (scale_y/2);
+                cursor_z = Number(meander[i][2]) * scale_z - (scale_z/2);
                 setCursorPosition( cursor_x, cursor_y, cursor_z );
-                //console.log(cursor_x, cursor_y, cursor_z);
+                console.log(cursor_x, cursor_y, cursor_z);
             }, meandercursortime );
             meandercursortime += time_interval;
             meanderPlaybackTimeouts.push(meanderCursorTimeout);
