@@ -20,6 +20,16 @@ const buttonOn = document.querySelector('#audioOn');
 const volumeControl = document.querySelector("#volume");
 const mainContent = document.querySelector("#main-app");
 const introScreen = document.querySelector("#intro-screen");
+const bar1 = document.querySelector("#bar1");
+const bar2 = document.querySelector("#bar2");
+const bar3 = document.querySelector("#bar3");
+const bar4 = document.querySelector("#bar4");
+const bar5 = document.querySelector("#bar5");
+const bar6 = document.querySelector("#bar6");
+const bar7 = document.querySelector("#bar7");
+const bar8 = document.querySelector("#bar8");
+
+
 
 const x = datasetJS.x;
 const y = datasetJS.y;
@@ -91,6 +101,18 @@ setBenjolin = function (params){
     myBenjolin.changeFIL_RES(roundedParams[5]);
     myBenjolin.changeFIL_RUN(roundedParams[6]);
     myBenjolin.changeFIL_SWP(roundedParams[7]);
+
+    let intParams = params.map(param => (Math.round(param) / 127) * 100); // map to 0-100 range; 
+
+    bar1.style.width = `${intParams[0]}%`;
+    bar2.style.width = `${intParams[1]}%`;
+    bar3.style.width = `${intParams[2]}%`;
+    bar4.style.width = `${intParams[3]}%`;
+    bar5.style.width = `${intParams[4]}%`;
+    bar6.style.width = `${intParams[5]}%`;
+    bar7.style.width = `${intParams[6]}%`;
+    bar8.style.width = `${intParams[7]}%`;
+
 };
 
 changeGain = function (value){

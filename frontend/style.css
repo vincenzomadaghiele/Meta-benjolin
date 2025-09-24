@@ -72,7 +72,7 @@ body {
     border: 2px solid rgb(0, 255, 0);
 }
 
-#volume-slider{
+.volume-slider{
     color:rgb(0, 255, 0);
     position:fixed;
     font-size: 15px;
@@ -98,7 +98,18 @@ body {
     font-size: 15px;
 }
 
-
+.parameters-info{
+    position:fixed;
+    text-align: right;
+    right: 15px; top: 140px;
+    padding: 5px;
+    z-index: 100;
+    color: rgb(0, 255, 0);
+    border: none;
+    height: auto;
+    width: auto;
+    font-size: 15px;
+}
 
 .slider{
     position:fixed;
@@ -145,3 +156,39 @@ body {
     opacity: 0.5;
 }
 
+.bar-container {
+  /* This is the total width of the bar */
+  width: 250px; 
+  height: 20px;
+  background-color: #e0e0e0; 
+  border-radius: 5px; 
+  overflow: hidden; 
+  margin-bottom: 10px;
+}
+
+.bar-fill {
+  /* The color of the filled portion */
+  background-color: rgb(0, 255, 0); 
+  height: 100%;
+  transition: width 0.5s ease-in-out;
+}
+.bar-row {
+    /* Use flexbox to align children (name and bar) horizontally */
+    display: flex;
+    /* Vertically centers the text with the bar */
+    align-items: center; 
+    /* Adds space between each parameter row */
+    margin-bottom: 15px; 
+}
+
+.parameter-name {
+    /* Optional: Provides a consistent width for the labels so the bars align */
+    min-width: 120px; 
+    /* Adds space between the name and the bar */
+    margin-right: 10px; 
+    /* Removes default paragraph margin for cleaner spacing */
+    margin-top: 0;
+    margin-bottom: 0;
+    /* Optional styling for the text */
+    color: rgb(0, 255, 0);
+}
