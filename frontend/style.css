@@ -160,7 +160,8 @@ body {
   /* This is the total width of the bar */
   width: 200px; 
   height: 20px;
-  background-color: #e0e0e0; 
+  /* background-color: #e0e0e0;  */
+  background-color: rgba(0,0,0,0.5);
   border-radius: 1px; 
   overflow: hidden; 
   margin-bottom: 1px;
@@ -170,7 +171,7 @@ body {
   /* The color of the filled portion */
   background-color: rgb(0, 255, 0); 
   height: 100%;
-  transition: width 0.5s ease-in-out;
+  transition: width 0.2s ease-in-out;
 }
 .bar-row {
     /* Use flexbox to align children (name and bar) horizontally */
@@ -178,7 +179,7 @@ body {
     /* Vertically centers the text with the bar */
     align-items: center; 
     /* Adds space between each parameter row */
-    margin-bottom: 10px; 
+    margin-bottom: 5px; 
 }
 
 .parameter-name {

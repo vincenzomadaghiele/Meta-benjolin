@@ -62,7 +62,7 @@ class Benjolin {
         // hipass
         hiPassFilter.type = "highpass";
         hiPassFilter.Q.value = 2;
-        hiPassFilter.frequency.value = 10;
+        hiPassFilter.frequency.value = 50;
         // compressor
         compressor.threshold.value = -50;
         compressor.knee.value = 20;
