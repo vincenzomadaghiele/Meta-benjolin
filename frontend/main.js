@@ -16,6 +16,13 @@ const COMPOSITION_BAR_HEIGHT_PX = 1000;
 const TIME_TO_POINTSIZE = 0.003;
 let raphaels = [];
 
+
+let myBenjolin;
+
+let setBenjolin;
+let changeGain;
+
+
 const buttonOn = document.querySelector('#audioOn');
 const volumeControl = document.querySelector("#volume");
 const mainContent = document.querySelector("#main-app");
@@ -28,6 +35,81 @@ const bar5 = document.querySelector("#bar5");
 const bar6 = document.querySelector("#bar6");
 const bar7 = document.querySelector("#bar7");
 const bar8 = document.querySelector("#bar8");
+
+const slider1 = document.getElementById('slider1');
+const slider2 = document.getElementById('slider2');
+const slider3 = document.getElementById('slider3');
+const slider4 = document.getElementById('slider4');
+const slider5 = document.getElementById('slider5');
+const slider6 = document.getElementById('slider6');
+const slider7 = document.getElementById('slider7');
+const slider8 = document.getElementById('slider8');
+
+
+
+slider1.addEventListener('input', () => {
+    const sliderValue = slider1.value;
+    bar1.style.width = `${sliderValue}%`;
+    if (myBenjolin) {
+        myBenjolin.change01FRQ((Math.round(sliderValue) / 100) * 127);
+    }
+});
+
+slider2.addEventListener('input', () => {
+    const sliderValue = slider2.value;
+    bar2.style.width = `${sliderValue}%`;
+    if (myBenjolin) {
+        myBenjolin.change02FRQ((Math.round(sliderValue) / 100) * 127);
+    }
+});
+
+slider3.addEventListener('input', () => {
+    const sliderValue = slider3.value;
+    bar3.style.width = `${sliderValue}%`;
+    if (myBenjolin) {
+        myBenjolin.change01RUN((Math.round(sliderValue) / 100) * 127);
+    }
+});
+
+slider4.addEventListener('input', () => {
+    const sliderValue = slider4.value;
+    bar4.style.width = `${sliderValue}%`;
+    if (myBenjolin) {
+        myBenjolin.change02RUN((Math.round(sliderValue) / 100) * 127);
+    }
+});
+
+slider5.addEventListener('input', () => {
+    const sliderValue = slider5.value;
+    bar5.style.width = `${sliderValue}%`;
+    if (myBenjolin) {
+        myBenjolin.changeFIL_FRQ((Math.round(sliderValue) / 100) * 127);
+    }
+});
+
+slider6.addEventListener('input', () => {
+    const sliderValue = slider6.value;
+    bar6.style.width = `${sliderValue}%`;
+    if (myBenjolin) {
+        myBenjolin.changeFIL_RES((Math.round(sliderValue) / 100) * 127);
+    }
+});
+
+slider7.addEventListener('input', () => {
+    const sliderValue = slider7.value;
+    bar7.style.width = `${sliderValue}%`;
+    if (myBenjolin) {
+        myBenjolin.changeFIL_RUN((Math.round(sliderValue) / 100) * 127);
+    }
+});
+
+slider8.addEventListener('input', () => {
+    const sliderValue = slider8.value;
+    bar8.style.width = `${sliderValue}%`;
+    if (myBenjolin) {
+        myBenjolin.changeFIL_SWP((Math.round(sliderValue) / 100) * 127);
+    }
+});
 
 
 
@@ -47,13 +129,6 @@ buttonOn.addEventListener("click", function (){
 })
 
 
-
-// Correctly declare variables in the global scope.
-let myBenjolin;
-
-// Declare functions in the global scope for accessibility.
-let setBenjolin;
-let changeGain;
 
 // Set the slider's event handler immediately.
 if (volumeControl) {
@@ -112,6 +187,8 @@ setBenjolin = function (params){
     bar6.style.width = `${intParams[5]}%`;
     bar7.style.width = `${intParams[6]}%`;
     bar8.style.width = `${intParams[7]}%`;
+
+    slider1.value = intParams[0];
 
 };
 
