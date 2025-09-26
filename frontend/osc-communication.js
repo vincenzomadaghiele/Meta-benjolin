@@ -297,6 +297,20 @@ class LatentSpace {
         }
         return interpolatedParams;
     }
+
+    getCoordinateGivenParams(params) {
+        let closestIndex = -1;
+        let minDistance = Infinity;
+        for (let i = 0; i < this.dataset.x.length; i++) {
+            let currentParams = this.getParameters(i);
+            let distance = this.calculateParameterDistance(params, currentParams);
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestIndex = i;
+            }
+        }
+        return this.getCoordinate(closestIndex);
+    }
 }
 
 
@@ -354,5 +368,9 @@ var sendStoprecording = function (){
     console.log("Sending stoprecording command. Doesn't work yet.");
 }
 
+var getCoordGivenParams = function (params){
+    let coordinate = latentSpace.getCoordinateGivenParams(params);
+    return coordinate;
+}
 
-export { LatentSpace, sendBox, sendMeander, sendDrawMeander, sendCrossfade, sendStop, sendStartrecording, sendStoprecording };
+export { LatentSpace, sendBox, sendMeander, sendDrawMeander, sendCrossfade, sendStop, sendStartrecording, sendStoprecording, getCoordGivenParams};

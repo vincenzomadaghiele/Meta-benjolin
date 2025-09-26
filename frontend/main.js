@@ -1,10 +1,11 @@
-import { LatentSpace, sendBox, sendMeander, sendDrawMeander, sendCrossfade, sendStop, sendStartrecording, sendStoprecording } from "osc-communication";
+import { LatentSpace, sendBox, sendMeander, sendDrawMeander, sendCrossfade, sendStop, sendStartrecording, sendStoprecording, getCoordGivenParams } from "osc-communication";
 import {datasetJS, p1, p2, p3, p4, p5, p6, p7, p8} from 'datasetJS'
 import * as THREE from 'three';
 import Stats from 'three/addons/libs/stats.module.js';
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@5/+esm";
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Benjolin } from "benjolin";
+// import { get } from "jquery";
 
 // GRAPHICS GLOBAL PARAMETERS
 const COMPOSITION_BAR_WIDTH_PX = 150;
@@ -45,6 +46,8 @@ const slider6 = document.getElementById('slider6');
 const slider7 = document.getElementById('slider7');
 const slider8 = document.getElementById('slider8');
 
+const listenButton = document.getElementById('listen');
+const addToTimelineButton = document.getElementById('add-to-timeline');
 
 
 slider1.addEventListener('input', () => {
@@ -108,6 +111,45 @@ slider8.addEventListener('input', () => {
     bar8.style.width = `${sliderValue}%`;
     if (myBenjolin) {
         myBenjolin.changeFIL_SWP((Math.round(sliderValue) / 100) * 127);
+    }
+});
+
+let isPlayingSliders = false;
+
+listenButton.addEventListener('click', () => {
+    /* This button plays the current state of the sliders on the benjolin until clicked again.
+    */
+    if (myBenjolin && !isPlayingSliders) {
+        myBenjolin.changeGain(volumeControl.value);
+        listenButton.innerText = "Stop";
+        ISPLAYBACKON = true;
+        isPlayingSliders = true;
+    }
+    else if (myBenjolin && isPlayingSliders) {
+        myBenjolin.changeGain(0);
+        listenButton.innerText = "Listen";
+        isPlayingSliders = false;
+        ISPLAYBACKON = false;
+    }
+});
+
+addToTimelineButton.addEventListener('click', () => {
+    // reads the current parameter slider values and adds a box to the timeline
+    if (!COMPOSITION_BAR_ISFULL) {
+        let params = [
+            (Math.round(slider1.value) / 100) * 127,
+            (Math.round(slider2.value) / 100) * 127,
+            (Math.round(slider3.value) / 100) * 127,
+            (Math.round(slider4.value) / 100) * 127,
+            (Math.round(slider5.value) / 100) * 127,
+            (Math.round(slider6.value) / 100) * 127,
+            (Math.round(slider7.value) / 100) * 127,
+            (Math.round(slider8.value) / 100) * 127
+        ];
+        let coordinate = getCoordGivenParams(params);
+        drawBox(coordinate[0], coordinate[1], coordinate[2], Math.random(), numBoxes);
+    } else {
+        textlog.innerHTML="The maximum composition time has been reached, it is not possible to add more elements to the composition bar. <br><br> Delete an element to modify the composition. ";
     }
 });
 
@@ -1987,7 +2029,9 @@ class PickHelper {
             setBenjolin(params);
         } else {
             // sendStop();
-            changeGain(0);
+            if (!isPlayingSliders) {
+                changeGain(0);
+            }
         }
         CURRENTPICKEDINDEX = this.pickedObjectIndex;
     }
