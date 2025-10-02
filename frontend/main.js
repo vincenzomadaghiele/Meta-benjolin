@@ -16,7 +16,7 @@ const HOVER_OPACITY = 0.6;
 const COMPOSITION_BAR_HEIGHT_PX = 1000;
 const TIME_TO_POINTSIZE = 0.003;
 let raphaels = [];
-
+let ISAPPLICATIONON = false;
 
 let myBenjolin;
 
@@ -50,12 +50,35 @@ const listenButton = document.getElementById('listen');
 const addToTimelineButton = document.getElementById('add-to-timeline');
 
 
+const visualizeSlidersInCloud = function () {
+    // visualize the current slider values in the scatterplot
+    let params = [
+        (Math.round(slider1.value) / 100) * 127,
+        (Math.round(slider2.value) / 100) * 127,
+        (Math.round(slider3.value) / 100) * 127,
+        (Math.round(slider4.value) / 100) * 127,
+        (Math.round(slider5.value) / 100) * 127,
+        (Math.round(slider6.value) / 100) * 127,
+        (Math.round(slider7.value) / 100) * 127,
+        (Math.round(slider8.value) / 100) * 127
+    ];
+    let coordinate = getCoordGivenParams(params);
+    if (!isPlayingSliders) {
+        // createCursor(coordinate[0], coordinate[1], coordinate[2]);
+    }
+    else {
+        setCursorPosition(coordinate[0], coordinate[1], coordinate[2]);
+    }
+}
+
+
 slider1.addEventListener('input', () => {
     const sliderValue = slider1.value;
     bar1.style.width = `${sliderValue}%`;
     if (myBenjolin) {
         myBenjolin.change01FRQ((Math.round(sliderValue) / 100) * 127);
     }
+    visualizeSlidersInCloud();
 });
 
 slider2.addEventListener('input', () => {
@@ -64,6 +87,7 @@ slider2.addEventListener('input', () => {
     if (myBenjolin) {
         myBenjolin.change02FRQ((Math.round(sliderValue) / 100) * 127);
     }
+    visualizeSlidersInCloud();
 });
 
 slider3.addEventListener('input', () => {
@@ -72,6 +96,7 @@ slider3.addEventListener('input', () => {
     if (myBenjolin) {
         myBenjolin.change01RUN((Math.round(sliderValue) / 100) * 127);
     }
+    visualizeSlidersInCloud();
 });
 
 slider4.addEventListener('input', () => {
@@ -80,6 +105,7 @@ slider4.addEventListener('input', () => {
     if (myBenjolin) {
         myBenjolin.change02RUN((Math.round(sliderValue) / 100) * 127);
     }
+    visualizeSlidersInCloud();
 });
 
 slider5.addEventListener('input', () => {
@@ -88,6 +114,7 @@ slider5.addEventListener('input', () => {
     if (myBenjolin) {
         myBenjolin.changeFIL_FRQ((Math.round(sliderValue) / 100) * 127);
     }
+    visualizeSlidersInCloud();
 });
 
 slider6.addEventListener('input', () => {
@@ -96,6 +123,7 @@ slider6.addEventListener('input', () => {
     if (myBenjolin) {
         myBenjolin.changeFIL_RES((Math.round(sliderValue) / 100) * 127);
     }
+    visualizeSlidersInCloud();
 });
 
 slider7.addEventListener('input', () => {
@@ -104,6 +132,7 @@ slider7.addEventListener('input', () => {
     if (myBenjolin) {
         myBenjolin.changeFIL_RUN((Math.round(sliderValue) / 100) * 127);
     }
+    visualizeSlidersInCloud();
 });
 
 slider8.addEventListener('input', () => {
@@ -111,7 +140,10 @@ slider8.addEventListener('input', () => {
     bar8.style.width = `${sliderValue}%`;
     if (myBenjolin) {
         myBenjolin.changeFIL_SWP((Math.round(sliderValue) / 100) * 127);
-    }
+    
+        if (!isPlayingSliders) {
+            visualizeSlidersInCloud();
+    }}
 });
 
 let isPlayingSliders = false;
@@ -124,12 +156,27 @@ listenButton.addEventListener('click', () => {
         listenButton.innerText = "Stop";
         ISPLAYBACKON = true;
         isPlayingSliders = true;
+        let params = [
+            (Math.round(slider1.value) / 100) * 127,
+            (Math.round(slider2.value) / 100) * 127,
+            (Math.round(slider3.value) / 100) * 127,
+            (Math.round(slider4.value) / 100) * 127,
+            (Math.round(slider5.value) / 100) * 127,
+            (Math.round(slider6.value) / 100) * 127,
+            (Math.round(slider7.value) / 100) * 127,
+            (Math.round(slider8.value) / 100) * 127
+        ];
+        let coordinate = getCoordGivenParams(params);
+        cursor = createCursor(coordinate[0], coordinate[1], coordinate[2]);
+        scene.add(cursor);
+
     }
     else if (myBenjolin && isPlayingSliders) {
         myBenjolin.changeGain(0);
         listenButton.innerText = "Listen";
         isPlayingSliders = false;
         ISPLAYBACKON = false;
+        scene.remove(cursor);
     }
 });
 
@@ -168,6 +215,7 @@ buttonOn.addEventListener("click", function (){
     console.log('starting audio context')
     mainContent.style.opacity = 1.0;
     introScreen.style.opacity = 0.0;
+    ISAPPLICATIONON = true;
 })
 
 
@@ -2026,7 +2074,9 @@ class PickHelper {
             }
             //console.log("picked ID: "+intersectedObjects[0].index);
             let params = sendBox(x[this.pickedObjectIndex], y[this.pickedObjectIndex], z[this.pickedObjectIndex]);
-            setBenjolin(params);
+            if (ISAPPLICATIONON) {
+                setBenjolin(params);
+            }
         } else {
             // sendStop();
             if (!isPlayingSliders) {
@@ -2271,7 +2321,6 @@ function storeMeander(pathCoords) {
     // console.log(pathCoords);
     if ( pathCoords ){
         for ( let i = 0; i < pathCoords.length-1; i++) {
-            
             //let preavious_meanderidx = Number(pathCoords[i-1]);
             //let meanderidx = Number(pathCoords[i]);
             let linepoints = [];
